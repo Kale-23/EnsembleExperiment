@@ -4,6 +4,7 @@ import vizact
 import vizshape
 import random
 import math
+from statistics import mean
 
 #setup
 viz.setMultiSample(4)
@@ -24,20 +25,23 @@ Z = viz.addText3D('Z',pos=[0,0,1.1],color=viz.BLUE,scale=[0.3,0.3,0.3],align=viz
 #Add the ground plane TODO prob switch this in final experiment
 ground = viz.addChild('sky_day.osgb')
 
-
 #sphere parameters
-leftX = -5
-rightX = 5
-bottomY = 1
-topY = 5
-rMean = 0.5
-rSTD = 0.1
-distance = 10
-sphereCount = 20
-trialCount = 10
+rMean = 0.5 #mean of radius of spawned spheres (in meters) mean will differ slightly from this number in each trial
+rSTD = 0.1 #standard deviation of the radius of spawned spheres (in meters)
+sphereCount = 20 #how many spheres to spawn in each trial
+trialCount = 10 #how many trials to complete
+sphereShowTime = 5 #seconds to show sphere before disappearing
 
-spheres = []
-spheresInEnv = []
+#where spheres will show up
+leftX = -5 #left bounding wall for spawned spheres
+rightX = 5 #right bounding wall for spawned spheres
+bottomY = 1 #bottom bounding wall for spawned spheres
+topY = 5 #top bounding wall for spawned spheres
+distance = 10 #distance from (0,0, 0) in the z direction to spawn the spheres
+
+#globals
+spheres = [] #will contain all sphere parameters stored in individual dictionaries
+spheresInEnv = [] #will contain sphere objects that are currently being showed to participant
 
 '''
 creates (sphereCount) sphere parameters
@@ -66,9 +70,9 @@ def makeSpheres():
 				
 		if overlap == False:
 			spheres.append(sphere)
-	
+			
 '''
-returns the actual average of spheres list
+returns average of spheres
 '''
 def getAverageRadius():
 	tempList = []
@@ -89,7 +93,7 @@ def addSpheres():
 		sphereAdd.setPosition(s.get('x'), s.get('y'), distance)
 		spheresInEnv.append(sphereAdd)
 
-'''
+''' TODO remove after testing probably
 removes all speheres in spheresInEnv list from environment
 * removes spheres from environemt
 * makes new spheres
@@ -108,7 +112,7 @@ def resetNoKey():
 	for s in spheresInEnv:
 		s.remove()
 
-'''
+''' TODO remove after testing
 probably put all experiment stuff in here
 '''
 def testing():
@@ -123,21 +127,36 @@ def testing():
 
 
 def executeExperiment():
+	experiment = []
+	
 	for trialNumber in range(trialCount):
 		yield makeSpheres()
+		sphereParams = spheres
+		rad = getAverageRadius()
 		yield addSpheres()
-		yield viztask.waitTime(5)
+		yield viztask.waitTime(sphereShowTime)
 		yield resetNoKey()
+				
+		trial = {
+		'trialNumber': trialNumber + 1,
+		'spheres': sphereParams,
+		'averageRadius': rad,
+		#'guessedRadius': int
+		}
+		
+		experiment.append(trial)
 		print("trial done: ", trialNumber)
 	print("done all")
+	print(experiment)
 
 
 
 # runs the experiment from here
+
 myTask = viztask.schedule(executeExperiment())
 vizact.onkeydown( 'e', myTask.kill )
 #viztask.schedule(testing())
-#viztask.schedule(experiment())
+
 	
 
 
