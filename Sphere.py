@@ -34,7 +34,7 @@ rMean = 0.5
 rSTD = 0.1
 distance = 10
 sphereCount = 20
-
+trialCount = 10
 
 spheres = []
 spheresInEnv = []
@@ -101,21 +101,43 @@ def reset(key):
 			s.remove()
 		makeSpheres()
 		addSpheres()
+		
+		
+# For testing TODO remove
+def resetNoKey():
+	for s in spheresInEnv:
+		s.remove()
 
 '''
 probably put all experiment stuff in here
 '''
-def experiment():
+def testing():
 	#tempList = []
 	###templist.append
+	yield viztask.waitKeyDown(' ') 
+	# yield viztask.waitTime(2)
 	makeSpheres()
 	addSpheres()
 	viz.callback(viz.KEYDOWN_EVENT,reset)
 
 
-# runs the experiment from here
-experiment()
 
+def executeExperiment():
+	for trialNumber in range(trialCount):
+		yield makeSpheres()
+		yield addSpheres()
+		yield viztask.waitTime(5)
+		yield resetNoKey()
+		print("trial done: ", trialNumber)
+	print("done all")
+
+
+
+# runs the experiment from here
+myTask = viztask.schedule(executeExperiment())
+vizact.onkeydown( 'e', myTask.kill )
+#viztask.schedule(testing())
+#viztask.schedule(experiment())
 	
 
 
