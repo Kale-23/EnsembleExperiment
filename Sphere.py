@@ -1,8 +1,6 @@
 ﻿import viz
 import viztask
 import vizact
-import vizinfo
-import vizproximity
 import vizshape
 import random
 import math
@@ -11,9 +9,7 @@ import math
 viz.setMultiSample(4)
 viz.fov(60)
 viz.go()
-
 viz.MainView.setPosition(0, 3, 0)
-
 
 #grey grid on floor TODO remove after testing
 grid = vizshape.addGrid()
@@ -25,7 +21,6 @@ X = viz.addText3D('X',pos=[1.1,0,0],color=viz.RED,scale=[0.3,0.3,0.3],parent=wor
 Y = viz.addText3D('Y',pos=[0,1.1,0],color=viz.GREEN,scale=[0.3,0.3,0.3],align=viz.ALIGN_CENTER_BASE,parent=world_axes)
 Z = viz.addText3D('Z',pos=[0,0,1.1],color=viz.BLUE,scale=[0.3,0.3,0.3],align=viz.ALIGN_CENTER_BASE,parent=world_axes)
 
-
 #Add the ground plane TODO prob switch this in final experiment
 ground = viz.addChild('sky_day.osgb')
 
@@ -36,15 +31,19 @@ rightX = 5
 bottomY = 1
 topY = 5
 rMean = 0.5
-rSTD = 0.25
+rSTD = 0.1
 distance = 10
-sphereCount = 10
+sphereCount = 20
 
 
 spheres = []
 spheresInEnv = []
 
-#creates x, y, r of each sphere and stores it in a dictionary
+'''
+creates (sphereCount) sphere parameters
+* spheres will not overlap when created
+* outputs parameters to spheres list
+'''
 def makeSpheres():
 	global spheres
 	spheres = []
@@ -67,9 +66,20 @@ def makeSpheres():
 				
 		if overlap == False:
 			spheres.append(sphere)
-			
-					
-# add spheres in spheres array to env, adds spheres to spheresInEnv array
+	
+'''
+returns the actual average of spheres list
+'''
+def getAverageRadius():
+	tempList = []
+	for s in spheres:
+		tempList.append(s.get('r'))
+	return mean(tempList)
+
+'''
+adds spheres in spheres list to environment
+* adds the created sphere objects to spheresInEnv list
+'''
 def addSpheres():
 	global spheresInEnv
 	spheresInEnv = []
@@ -78,28 +88,35 @@ def addSpheres():
 		sphereAdd = vizshape.addSphere(s.get('r'))
 		sphereAdd.setPosition(s.get('x'), s.get('y'), distance)
 		spheresInEnv.append(sphereAdd)
-	
-	
-#makes and adds spheres to scene, just an easier way to call both
-def both():
-	makeSpheres()
-	addSpheres()
 
-
-#reset make/ add for new set of spheres
-def onKeyDown(key):
+'''
+removes all speheres in spheresInEnv list from environment
+* removes spheres from environemt
+* makes new spheres
+* adds new spheres to environent
+'''
+def reset(key):
 	if key == ' ':
 		for s in spheresInEnv:
 			s.remove()
-		both()
+		makeSpheres()
+		addSpheres()
+
+'''
+probably put all experiment stuff in here
+'''
+def experiment():
+	#tempList = []
+	###templist.append
+	makeSpheres()
+	addSpheres()
+	viz.callback(viz.KEYDOWN_EVENT,reset)
 
 
+# runs the experiment from here
+experiment()
 
-#stuff that does stuff idk what to call it lol
-
-both()
-
-viz.callback(viz.KEYDOWN_EVENT,onKeyDown)
+	
 
 
 
