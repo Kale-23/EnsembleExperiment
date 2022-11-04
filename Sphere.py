@@ -2,6 +2,7 @@
 import viztask
 import vizact
 import vizshape
+
 import random
 import math
 from statistics import mean
@@ -25,12 +26,17 @@ Z = viz.addText3D('Z',pos=[0,0,1.1],color=viz.BLUE,scale=[0.3,0.3,0.3],align=viz
 #Add the ground plane TODO prob switch this in final experiment
 ground = viz.addChild('sky_day.osgb')
 
+
+# IMPORTANT #
+
+participant = 1
+
 #sphere parameters
 rMean = 0.5 #mean of radius of spawned spheres (in meters) mean will differ slightly from this number in each trial
 rSTD = 0.1 #standard deviation of the radius of spawned spheres (in meters)
-sphereCount = 20 #how many spheres to spawn in each trial
-trialCount = 10 #how many trials to complete
-sphereShowTime = 5 #seconds to show sphere before disappearing
+sphereCount = 10 #how many spheres to spawn in each trial
+trialCount = 2 #how many trials to complete
+sphereShowTime = 1 #seconds to show sphere before disappearing
 
 #where spheres will show up
 leftX = -5 #left bounding wall for spawned spheres
@@ -42,6 +48,7 @@ distance = 10 #distance from (0,0, 0) in the z direction to spawn the spheres
 #globals
 spheres = [] #will contain all sphere parameters stored in individual dictionaries
 spheresInEnv = [] #will contain sphere objects that are currently being showed to participant
+experiment = [] #containns all data gathered from the experiment
 
 '''
 creates (sphereCount) sphere parameters
@@ -127,6 +134,7 @@ def testing():
 
 
 def executeExperiment():
+	global experiment
 	experiment = []
 	
 	for trialNumber in range(trialCount):
@@ -141,20 +149,50 @@ def executeExperiment():
 		'trialNumber': trialNumber + 1,
 		'spheres': sphereParams,
 		'averageRadius': rad,
-		#'guessedRadius': int
+		'guess': "larger"
 		}
 		
 		experiment.append(trial)
-		print("trial done: ", trialNumber)
+		print("trial done: ", trialNumber + 1)
+	writeOut()
 	print("done all")
 	print(experiment)
 
+
+
+
+'''
+Writes files out for the experiment
+* One file contains trial#, average radius of trial, and the participant guess
+* One file for sphere parameters
+'''
+def writeOut():
+	outfile = open("Paricipant" + str(participant) + ".csv", "w")
+	outfile.write("trial,actualRadius,guess\n")
+	
+	for trial in experiment:
+		outfile.write(str(trial.get('trialNumber')) + "," + str(trial.get('averageRadius')) + "," + trial.get('guess') + "\n")
+	outfile.close()
+	
+	outfile2 = open("Paricipant" + str(participant) + "Spheres" + ".csv", "w")
+	outfile2.write("trial,sphereX,sphereY,sphereR\n")
+	
+	for trial in experiment:
+		tri = str(trial.get('trialNumber'))
+		for i in range(len(trial.get('spheres'))):
+			outfile2.write(tri + "," + str(trial.get('spheres')[i].get('x')) + "," + str(trial.get('spheres')[i].get('y')) + "," + str(trial.get('spheres')[i].get('r')) + "\n")
+	outfile2.close()
+	
+		
+	
 
 
 # runs the experiment from here
 
 myTask = viztask.schedule(executeExperiment())
 vizact.onkeydown( 'e', myTask.kill )
+
+
 #viztask.schedule(testing())
 
 	
