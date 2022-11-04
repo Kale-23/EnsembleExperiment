@@ -2,6 +2,7 @@
 import viztask
 import vizact
 import vizshape
+import vizinfo
 
 import random
 import math
@@ -33,9 +34,9 @@ participant = 1
 
 #sphere parameters
 rMean = 0.5 #mean of radius of spawned spheres (in meters) mean will differ slightly from this number in each trial
-rSTD = 0.1 #standard deviation of the radius of spawned spheres (in meters)
+rSTD = 0.25 #standard deviation of the radius of spawned spheres (in meters)
 sphereCount = 10 #how many spheres to spawn in each trial
-trialCount = 2 #how many trials to complete
+trialCount = 10 #how many trials to complete
 sphereShowTime = 1 #seconds to show sphere before disappearing
 
 #where spheres will show up
@@ -46,6 +47,8 @@ topY = 5 #top bounding wall for spawned spheres
 distance = 10 #distance from (0,0, 0) in the z direction to spawn the spheres
 
 #globals
+step = 0.1 #percent of test sphere radius to change between trials
+prevTestSphere = 0 #controls stepwise determination of testing sphere
 spheres = [] #will contain all sphere parameters stored in individual dictionaries
 spheresInEnv = [] #will contain sphere objects that are currently being showed to participant
 experiment = [] #containns all data gathered from the experiment
@@ -79,6 +82,87 @@ def makeSpheres():
 			spheres.append(sphere)
 			
 '''
+adds spheres in spheres list to environment
+* adds the created sphere objects to spheresInEnv list
+'''
+def addSpheres():
+	global spheresInEnv
+	spheresInEnv = []
+	for s in spheres:
+		sphereAdd = vizshape.addSphere(s.get('r'))
+		sphereAdd.setPosition(s.get('x'), s.get('y'), distance)
+		spheresInEnv.append(sphereAdd)
+		
+'''
+removes spheres from environment
+'''
+def removeSpheres():
+	for s in spheresInEnv:
+		s.remove()
+		
+'''
+gets the average radius of current trial's spheres.
+spawns a test sphere with a radius(prevTestSphere) percent
+larger/smaller of the average radius.
+'''
+def testingSphere(rad):
+	global spheresInEnv
+	global prevTestSphere
+	spheresInEnv = []
+	adjustedRad = rad * (1 + prevTestSphere)
+	
+	testAdd = vizshape.addSphere(adjustedRad)
+	testAdd.setPosition(0, 1, distance) #TODO check distance spawning
+	spheresInEnv.append(testAdd)
+		
+'''
+Determines whether to step up or down the percent over/under the average sphere radius
+for the test sphere in each trial
+'''
+def stepwiseCalc(response):
+	global prevTestSphere
+	global step
+	if response == "Larger":
+		prevTestSphere = prevTestSphere + step
+	if response == "Smaller":
+		prevTestSphere = prevTestSphere - step
+
+'''
+Sets up info panel, gets response, and returns smaller/larger guess
+'''
+def response():
+	info = vizinfo.InfoPanel("Is the sphere larger or smaller", title = "Please select an answer", margin = (100, 100), align = viz.ALIGN_CENTER_BOTTOM) #will have to adjust for vr headset
+	
+	info.addSeparator()
+	smaller = info.addLabelItem('Smaller', viz.addRadioButton('size'))
+	larger = info.addLabelItem('Larger', viz.addRadioButton('size'))
+	
+	info.addSeparator()
+	
+	submitButton = info.addItem(viz.addButtonLabel('Submit'),align=viz.ALIGN_RIGHT_CENTER)
+	
+	''' TODO maybe figure this out
+	#make sure at least smaller or larger is pressed
+	answered = False
+	if (smaller.get() == viz.DOWN) or (larger.get() == viz.DOWN):
+		answered = True
+	'''
+	
+	#if submit is pressed, return answer and remove info panel
+	yield viztask.waitButtonUp(submitButton)
+	if smaller.get() == viz.DOWN:
+		info.remove()
+		answer = "Smaller"
+	elif larger.get() == viz.DOWN:
+		info.remove()
+		answer = "Larger"
+	else:
+		info.remove()
+		answer = "NA"
+	viztask.returnValue(answer)
+	
+
+'''
 returns average of spheres
 '''
 def getAverageRadius():
@@ -88,75 +172,47 @@ def getAverageRadius():
 	return mean(tempList)
 
 '''
-adds spheres in spheres list to environment
-* adds the created sphere objects to spheresInEnv list
+excecutes and records results to outfiles
 '''
-def addSpheres():
-	global spheresInEnv
-	spheresInEnv = []
-	for s in spheres:
-		
-		sphereAdd = vizshape.addSphere(s.get('r'))
-		sphereAdd.setPosition(s.get('x'), s.get('y'), distance)
-		spheresInEnv.append(sphereAdd)
-
-''' TODO remove after testing probably
-removes all speheres in spheresInEnv list from environment
-* removes spheres from environemt
-* makes new spheres
-* adds new spheres to environent
-'''
-def reset(key):
-	if key == ' ':
-		for s in spheresInEnv:
-			s.remove()
-		makeSpheres()
-		addSpheres()
-		
-		
-# For testing TODO remove
-def resetNoKey():
-	for s in spheresInEnv:
-		s.remove()
-
-''' TODO remove after testing
-probably put all experiment stuff in here
-'''
-def testing():
-	#tempList = []
-	###templist.append
-	yield viztask.waitKeyDown(' ') 
-	# yield viztask.waitTime(2)
-	makeSpheres()
-	addSpheres()
-	viz.callback(viz.KEYDOWN_EVENT,reset)
-
-
-
 def executeExperiment():
 	global experiment
+	global prevTestSphere
 	experiment = []
 	
+	#repeats for number of trials
 	for trialNumber in range(trialCount):
+		#makes the spehers, adds the spheres, waits the sphereShowTime length, then removes spheres
 		yield makeSpheres()
 		sphereParams = spheres
 		rad = getAverageRadius()
 		yield addSpheres()
 		yield viztask.waitTime(sphereShowTime)
-		yield resetNoKey()
-				
+		yield removeSpheres()
+		
+		#adds the testingSphere, shows info panel to chose smaller/larger, calculates next step up/down, removes the test sphere
+		yield testingSphere(rad)
+		testRad = rad * (1 + prevTestSphere)
+		resp = yield response()
+		currStep = prevTestSphere
+		yield stepwiseCalc(resp)
+		yield removeSpheres()
+		
+		#records all data from above into trial dictionary
 		trial = {
-		'trialNumber': trialNumber + 1,
-		'spheres': sphereParams,
-		'averageRadius': rad,
-		'guess': "larger"
+		'trialNumber': trialNumber + 1, #done
+		'spheres': sphereParams, #done
+		'averageRadius': rad, #done
+		'testSphereRadius': testRad, #done
+		'step': currStep, #done
+		'guess': resp #done
 		}
 		
+		#appends the trial dictionary in overall list of trials
 		experiment.append(trial)
 		print("trial done: ", trialNumber + 1)
+	#writes data to outfile
 	writeOut()
 	print("done all")
-	print(experiment)
 
 
 
@@ -167,22 +223,25 @@ Writes files out for the experiment
 * One file for sphere parameters
 '''
 def writeOut():
-	outfile = open("Paricipant" + str(participant) + ".csv", "w")
-	outfile.write("trial,actualRadius,guess\n")
-	
-	for trial in experiment:
-		outfile.write(str(trial.get('trialNumber')) + "," + str(trial.get('averageRadius')) + "," + trial.get('guess') + "\n")
-	outfile.close()
-	
-	outfile2 = open("Paricipant" + str(participant) + "Spheres" + ".csv", "w")
-	outfile2.write("trial,sphereX,sphereY,sphereR\n")
-	
-	for trial in experiment:
-		tri = str(trial.get('trialNumber'))
-		for i in range(len(trial.get('spheres'))):
-			outfile2.write(tri + "," + str(trial.get('spheres')[i].get('x')) + "," + str(trial.get('spheres')[i].get('y')) + "," + str(trial.get('spheres')[i].get('r')) + "\n")
-	outfile2.close()
-	
+	try:
+		outfile = open("Paricipant" + str(participant) + ".csv", "w")
+		outfile.write("trial,actualRadius,testRadius,step,guess\n")
+		
+		for trial in experiment:
+			outfile.write("{},{},{},{},{}\n".format(trial.get('trialNumber'), trial.get('averageRadius'), trial.get('testSphereRadius'), trial.get('step'), trial.get('guess')))
+		outfile.close()
+		
+		outfile2 = open("Paricipant" + str(participant) + "Spheres" + ".csv", "w")
+		outfile2.write("trial,sphereX,sphereY,sphereR\n")
+		
+		for trial in experiment:
+			tri = str(trial.get('trialNumber'))
+			for i in range(len(trial.get('spheres'))):
+				outfile2.write(tri + "," + str(trial.get('spheres')[i].get('x')) + "," + str(trial.get('spheres')[i].get('y')) + "," + str(trial.get('spheres')[i].get('r')) + "\n")
+		outfile2.close()
+	except IOError:
+		viz.logWarn("Dont have the file permissions to log data")
+
 		
 	
 
@@ -190,10 +249,6 @@ def writeOut():
 # runs the experiment from here
 
 myTask = viztask.schedule(executeExperiment())
-vizact.onkeydown( 'e', myTask.kill )
-
-
-#viztask.schedule(testing())
 
 	
 
