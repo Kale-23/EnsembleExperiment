@@ -131,7 +131,7 @@ def stepwiseCalc(response):
 Sets up info panel, gets response, and returns smaller/larger guess
 '''
 def response():
-	info = vizinfo.InfoPanel("Is the sphere larger or smaller", title = "Please select an answer", margin = (100, 100), align = viz.ALIGN_CENTER_BOTTOM) #will have to adjust for vr headset
+	info = vizinfo.InfoPanel("Is the sphere larger or smaller?", title = "Please select an answer", margin = (100, 100), align = viz.ALIGN_CENTER_BOTTOM) #will have to adjust for vr headset
 	
 	info.addSeparator()
 	smaller = info.addLabelItem('Smaller', viz.addRadioButton('size'))
