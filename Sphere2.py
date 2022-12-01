@@ -18,14 +18,16 @@ viz.MainView.setPosition(0, 3, 0)
 grid = vizshape.addGrid()
 grid.color(viz.GRAY)
 
+'''
 #x,y,z world axis TODO remove after testing
 world_axes = vizshape.addAxes()
 X = viz.addText3D('X',pos=[1.1,0,0],color=viz.RED,scale=[0.3,0.3,0.3],parent=world_axes)
 Y = viz.addText3D('Y',pos=[0,1.1,0],color=viz.GREEN,scale=[0.3,0.3,0.3],align=viz.ALIGN_CENTER_BASE,parent=world_axes)
 Z = viz.addText3D('Z',pos=[0,0,1.1],color=viz.BLUE,scale=[0.3,0.3,0.3],align=viz.ALIGN_CENTER_BASE,parent=world_axes)
+'''
 
 #Add the ground plane TODO prob switch this in final experiment
-ground = viz.addChild('sky_day.osgb')
+#ground = viz.addChild('sky_day.osgb')
 
 
 
@@ -40,8 +42,8 @@ jitter = 10
 
 
 #sphere parameters
-rMean = 0.3 # TODO change to match paper
-rSTD = 0.01 # TODO change to match paper
+rLow = 0.3 # TODO change to match paper
+rHigh = 0.1 # TODO change to match paper
 testRadLow = 0.1
 testRadHigh = 0.3
 showTime = 1
@@ -57,7 +59,7 @@ def getX(angle):
 def getY(angle):
 	return circleCenterY + (cirlceRadius * math.sin(angle))
 
-def showSpheres(distance, rM, rS):
+def showSpheres(distance, rL, rH):
 	global spheresOut
 	global spheres
 	placementAngle = [0, 45, 90, 135, 180, 225, 270, 315]
@@ -70,7 +72,7 @@ def showSpheres(distance, rM, rS):
 		getX(math.radians(angle)), 
 		getY(math.radians(angle)), 
 		distance, 
-		random.gauss(rM, rS)
+		random.uniform(rL, rH)
 		]) 
 	
 	for i in spheres:
@@ -106,11 +108,11 @@ def response():
 	
 def experiment():
 	for i in range(numberTrials):
-		yield showSpheres(5, rMean, rSTD)
+		yield showSpheres(5, rLow, rHigh)
 		print(spheres)
 		yield viztask.waitTime(showTime)
 		yield removeSpheres()
-		yield testingSphere(5)
+		yield testingSphere(6)
 		yield response()
 		yield removeSpheres()
 		
