@@ -133,7 +133,8 @@ def response():
 	global scale_factor
 	spheresOut = []
 	
-	probe = vizshape.addSphere(random.uniform(probeRadLow, probeRadHigh))
+	probeRadius = random.uniform(probeRadLow, probeRadHigh)
+	probe = vizshape.addSphere(probeRadius)
 	probe.setPosition(0, 2, distance2) #TODO check distance spawning
 	spheresOut.append(probe)
 	
@@ -147,23 +148,25 @@ def response():
 	#align = viz.ALIGN_CENTER_BOTTOM) # TODO will have to adjust for vr headset
 
 	
-	viz.callback(viz.KEYDOWN_EVENT,onKeyDown)
-l
-	#yield viztask.waitTime(5) # TODO remove after testing
-	info.remove()
-	viztask.returnValue(probe.getRadius())
+	viz.callback(viz.KEYDOWN_EVENT, onKeyDown)
+
+	yield viztask.waitKeyDown(" ")
+	print("done")
+	viz.callback(viz.KEYDOWN_EVENT, None)
+
+
+	#info.remove()
+	
+	probeResponse = [probeRadius, scale_factor]
+	viztask.returnValue(probeResponse)
 	
 def onKeyDown(key):
-	if key == ' ':
-		return True
-	elif key == viz.KEY_LEFT:
+	if key == viz.KEY_LEFT:
 		decrease_scale(spheresOut[0])
-		return False
 	elif key == viz.KEY_RIGHT:
 		increase_scale(spheresOut[0])
-		return False
 	else:
-		return False
+		pass
 	
 
 def experiment():
@@ -176,7 +179,8 @@ def experiment():
 		yield addSpheres(sphereList[i])
 		yield viztask.waitTime(trialShowPause)
 		yield removeSpheres()
-		yield response()
+		probe = yield response()
+		print(probe)
 		yield removeSpheres()
 	
 
