@@ -45,8 +45,8 @@ rAvgLow = 0.25 # minimum average radius for spheres in each trial, if below this
 rAvgHigh = 0.35 # maximum average radius for spheres in each trial, if above this value, sphere values for trial will be deleted ad ew values will be generated
 
 # probe parameters
-probeRadLow = 0.1 # Lowest radius the probe can randomly be given
-probeRadHigh = 0.3 # Highest radius the probe can randomly be given
+probeRadLow = 0.25 # Lowest radius the probe can randomly be given
+probeRadHigh = 0.35 # Highest radius the probe can randomly be given
 scale_factor = 1 # factor by which the radius of the probe will be scaled by when shown.
 valueToScaleBy = 1.05 # value by which the scale factor of the probe is increased/decreased by every time '' is called
 
