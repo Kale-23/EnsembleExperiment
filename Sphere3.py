@@ -3,6 +3,7 @@ import viztask
 import vizact
 import vizshape
 import vizinfo
+import os
 
 
 import random
@@ -18,9 +19,6 @@ viz.MainView.setPosition(0, 3, 0)
 #grey grid on floor TODO remove after testing
 grid = vizshape.addGrid()
 grid.color(viz.GRAY)
-
-# testing only, should change
-participant = "test"
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
 count = 50 # How many spheres trials to create at a certain distance
@@ -58,7 +56,7 @@ endResponseInput = ' ' # participant input that confirms their probe size and en
 # global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
 spheresOut = [] # Will hold any sphere entity that is currently being shown in the environment, is emptied anytime removeSpheres is called
-trialProbeResponseRadius = [] # holds the radii of participant probe sphere responses for each trial.
+trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
 
 '''
 Creates the '+' mark within the middle of the imaginary circumference. 
@@ -205,7 +203,7 @@ def response(dist):
 	viz.callback(viz.KEYDOWN_EVENT, None)
 	
 	#probeResponse = [probeRadius, scale_factor]
-	viztask.returnValue(probeRadius * scale_factor)
+	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor])
 	
 
 	
@@ -219,7 +217,7 @@ The participant is allowed to adjust the size of the probe until they are satisf
 def experiment():
 	global SphereList
 	#print(len(sphereList)) for testing purposes
-	global trialProbeResponseRadius
+	global trialProbeResponse
 	
 	# runs through all trials stored in 'sphereList'
 	for i in range(len(sphereList)):
@@ -229,36 +227,64 @@ def experiment():
 		yield addSpheres(sphereList[i])
 		yield viztask.waitTime(trialShowPause)
 		yield removeSpheres()
+		
+		startTime = viz.tick()
 		probe = yield response(sphereList[i][0][2])
-		trialProbeResponseRadius.append(probe)
-		#print(probe)
+		responseTime = viz.tick() - startTime
+		resp = [probe, responseTime]
+		trialProbeResponse.append(resp)
+		
 		yield removeSpheres()
 	writeOut()
 	print("experiment over")
-		
 
 '''
-Creates new file and records trial, sphereNumber, sphereX, sphereY, sphereDist, sphereRadius, probeAnswerRadius for each sphere within a trial, for each trial.
+helper for writeOut. automatically gets and updates the current participant number for naming output file.
+'''
+def getParticipantNumber():
+	if not os.path.exists('currentParticipant.txt'):
+		with open('currentParticipant.txt','w') as f:
+			f.write('1')
+	with open('currentParticipant.txt','r') as f:
+		st = int(f.read())
+		out = st
+		st+=1 
+	with open('currentParticipant.txt','w') as f:
+		f.write(str(st))
+	
+	return out
+
+'''
+Creates new file and records trial, sphereNumber, sphereX, sphereY, sphereDist, sphereRadius, probeAnswerRadius, probeAnswerTime for each sphere within a trial, for each trial.
 '''
 def writeOut():
-	try:
-		outfile = open("Paricipant" + str(participant) + ".csv", "w")
-		outfile.write("trial,sphereNumber,sphereX,sphereY,sphereDist,sphereRadius,probeAnswerRadius\n")
-		
-		for i in range(len(sphereList)):
-			for j in range(len(sphereList[i])):
-				outfile.write("{},{},{},{},{},{},{}\n".format(i + 1, j + 1, sphereList[i][j][0], sphereList[i][j][1], sphereList[i][j][2], sphereList[i][j][3], trialProbeResponseRadius[i]))
-		outfile.close()
-		
-	except IOError:
-		viz.logWarn("Dont have the file permissions to log data")
+	
+	path = "participantData"
+	participantNumber = getParticipantNumber()
+	
+	if not os.path.exists(path):
+		os.makedirs(path)
+
+	filename = "Participant" + str(participantNumber) + ".csv"
+	with open(os.path.join(path, filename), 'w') as outfile:
+		try:
+			outfile.write("trial,sphereNumber,sphereX,sphereY,sphereDist,sphereRadius,probeStartingRadius,probeFinalScaleFactor,probeAnswerRadius,probeResponseTime\n")
+			
+			for i in range(len(sphereList)):
+				for j in range(len(sphereList[i])):
+					print(trialProbeResponse[i])
+					outfile.write("{},{},{},{},{},{},{},{},{},{}\n".format(i + 1, j + 1, sphereList[i][j][0], sphereList[i][j][1], sphereList[i][j][2], sphereList[i][j][3], trialProbeResponse[i][0][0],trialProbeResponse[i][0][1],trialProbeResponse[i][0][2],trialProbeResponse[i][1]))
+			#outfile.close()
+			
+		except IOError:
+			viz.logWarn("Dont have the file permissions to log data")
 
 
 #where the experiment is run from
 #makeSpheres(count, distance1, rLow, rHigh)
 #makeSpheres(count, distance2, rLow, rHigh)
 #makeSpheres(count, distance3, rLow, rHigh)
-makeSpheres(5, distance2, rLow, rHigh) # testing purposes only, uncomment above and delete once testing is over
+makeSpheres(2, distance2, rLow, rHigh) # testing purposes only, uncomment above and delete once testing is over
 random.shuffle(sphereList)
 
 theExperiment = viztask.schedule(experiment())
