@@ -206,7 +206,7 @@ def response(dist):
 	# makes it so participant cannot change 'scale_factor' outside of response time.
 	viz.callback(viz.KEYDOWN_EVENT, None)
 	
-	#probeResponse = [probeRadius, scale_factor]
+	#probeResponse = [probe starting radius, final scale factor, final probe radius, if participant responded]
 	noResponse = 0
 	if time.condition == waitTime:
 		noResponse = 1
@@ -216,7 +216,7 @@ def response(dist):
 
 	
 '''
-for each trial in 'sphereList:
+for each trial in 'sphereList':
 The fixation point will be shown for 'fixationShowPause' seconds.
 The spheres of the trial will show for 'trialShowPause' seconds.
 Both the fixation point and spheres will be taken off the screen, and the probe will appear.
@@ -224,7 +224,6 @@ The participant is allowed to adjust the size of the probe until they are satisf
 '''
 def experiment():
 	global SphereList
-	#print(len(sphereList)) for testing purposes
 	global trialProbeResponse
 	
 	# runs through all trials stored in 'sphereList'
