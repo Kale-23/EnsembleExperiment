@@ -52,6 +52,7 @@ valueToScaleBy = 1.05 # value by which the scale factor of the probe is increase
 decreaseScaleFactorInput = viz.KEY_LEFT # participant input (keyboard/ joystick/ etc) that will multiply 'scale_factor' by 'valueToScaleBy'
 increaseScaleFactorInput = viz.KEY_RIGHT # participant input (keyboard/ joystick/ etc) that will divide 'scale_factor' by 'valueToScaleBy'particip
 endResponseInput = ' ' # participant input that confirms their probe size and ends response portion of trial.
+timeToScale = 5 # max time participant has to scale probe sphere and submit answer.
 
 # global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
@@ -197,13 +198,20 @@ def response(dist):
 
 	# Allows participant input during this time until 'endResponseInput' is input.
 	viz.callback(viz.KEYDOWN_EVENT, onKeyDown)
-	yield viztask.waitKeyDown(endResponseInput)
+	responded = viztask.waitKeyDown(endResponseInput)
+	waitTime = viztask.waitTime(timeToScale)
+	
+	time = yield viztask.waitAny([waitTime,responded])
 	
 	# makes it so participant cannot change 'scale_factor' outside of response time.
 	viz.callback(viz.KEYDOWN_EVENT, None)
 	
 	#probeResponse = [probeRadius, scale_factor]
-	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor])
+	noResponse = 0
+	if time.condition == waitTime:
+		noResponse = 1
+		
+	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
 	
 
 	
@@ -253,6 +261,19 @@ def getParticipantNumber():
 		f.write(str(st))
 	
 	return out
+	
+def sphereToString(s):
+	tempString = ""
+	for i in range(len(s)):
+		tempString += "(" + str(s[i][0]) + ";" + str(s[i][1]) + ";" + str(s[i][2]) + ";" + str(s[i][3]) + "),"
+	return tempString[0:-1]
+
+
+def sphereTrialAverageRadius(s):
+	total = 0
+	for i in range(len(s)):
+		total += s[i][3]
+	return total / len(s)
 
 '''
 Creates new file and records trial, sphereNumber, sphereX, sphereY, sphereDist, sphereRadius, probeAnswerRadius, probeAnswerTime for each sphere within a trial, for each trial.
@@ -268,12 +289,20 @@ def writeOut():
 	filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
-			outfile.write("trial,sphereNumber,sphereX,sphereY,sphereDist,sphereRadius,probeStartingRadius,probeFinalScaleFactor,probeAnswerRadius,probeResponseTime\n")
+			outfile.write("ID,age,gender,hand,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				for j in range(len(sphereList[i])):
-					print(trialProbeResponse[i])
-					outfile.write("{},{},{},{},{},{},{},{},{},{}\n".format(i + 1, j + 1, sphereList[i][j][0], sphereList[i][j][1], sphereList[i][j][2], sphereList[i][j][3], trialProbeResponse[i][0][0],trialProbeResponse[i][0][1],trialProbeResponse[i][0][2],trialProbeResponse[i][1]))
+				print(trialProbeResponse[i])
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, "ageTest", "genderTest", "handTest", i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+		
+		
+		#try:
+			#outfile.write("trial,sphereNumber,sphereX,sphereY,sphereDist,sphereRadius,probeStartingRadius,probeFinalScaleFactor,probeAnswerRadius,probeResponseTime\n")
+			
+			#for i in range(len(sphereList)):
+				#for j in range(len(sphereList[i])):
+					#print(trialProbeResponse[i])
+					#outfile.write("{},{},{},{},{},{},{},{},{},{}\n".format(i + 1, j + 1, sphereList[i][j][0], sphereList[i][j][1], sphereList[i][j][2], sphereList[i][j][3], trialProbeResponse[i][0][0],trialProbeResponse[i][0][1],trialProbeResponse[i][0][2],trialProbeResponse[i][1]))
 			#outfile.close()
 			
 		except IOError:

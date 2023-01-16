@@ -1,0 +1,3 @@
+ID,age,gender,hand,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime
+8,ageTest,genderTest,handTest,1,(1.4627074032383414;1.6360032798750035;6;0.3481057612941708,0.3232533821229049,0.25253572712322603,0.25253572712322603,1.0,0.03940880000000013
+8,ageTest,genderTest,handTest,2,(1.4386796006773017;1.6106832590820048;6;0.21866965975468208,0.3000410419792163,0.25319220387368585,0.25319220387368585,1.0,0.04956490000000002
