@@ -11,10 +11,11 @@ from statistics import mean
 
 import steamvr
 
-##### VARIABLES AND LISTS #####
+##### GLOBALS #####
+###################
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
-count = 1 # How many spheres trials to create at a certain distance
+count = 5 # How many spheres trials to create at a certain distance
 distance1 = 4 # Distance from zero of foreground trials
 distance2 = 6 # Distance from zero of Middle trials
 distance3 = 8 # Distance from zero of Background trials
@@ -22,12 +23,12 @@ distance3 = 8 # Distance from zero of Background trials
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 cirlceRadius = 2 # Radius of circumference
 circleCenterX = 0 # where the center of the circumference will be placed on the x axis
-
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
 
 # Pause times between events of experiment
 trialShowPause = 1 #time to pause after showing the trial spheres
 fixationShowPause = 0.5 #time the fixation point is on screen before spheres show
+betweenTrialPause = 0 #time between submission of probe sphere and next trial start
 
 # Radius values for spheres
 rLow = 0.2 # Lowest radius a sphere can randomly be given
@@ -39,20 +40,21 @@ rAvgHigh = 0.35 # maximum average radius for spheres in each trial, if above thi
 probeRadLow = 0.25 # Lowest radius the probe can randomly be given
 probeRadHigh = 0.35 # Highest radius the probe can randomly be given
 scale_factor = 1 # factor by which the radius of the probe will be scaled by when shown.
-valueToScaleBy = 1.005 # value by which the scale factor of the probe is increased/decreased by every time '' is called
+valueToScaleBy = 1.005 # value by which the scale factor of the probe is increased/decreased during response
 
 # response parameters
 endResponseInput = steamvr.BUTTON_TRIGGER # participant input that confirms their probe size and ends response portion of trial.
-timeToScale = 5 # max time participant has to scale probe sphere and submit answer.
+timeToScale = 10 # max time participant has to scale probe sphere and submit answer.
 
 # globals
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
 spheresOut = [] # Will hold any sphere entity that is currently being shown in the environment, is emptied anytime removeSpheres is called
 trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
-participantHeight = 0
 
 
-##### FUNCTIONS #####
+##### METHODS #####
+###################
+
 '''
 Creates the '+' mark within the middle of the imaginary circumference. 
 The fixation point will be shown at the same distance as the spheres, and will scale with distance so as to always appear to be same size.
@@ -72,7 +74,7 @@ def showFixationPoint(dist):
 
 
 '''
-Creates 8 spheres for each trial, for 'count' number of trials. 
+Creates 8 spheres for each trial. 
 Sphere parameters will be gennerated every 45 degrees (+/- 'jitter') around the imaginary circumference starting at 0 degrees up to 315 degrees. 
 The imaginary circumference will always appear to be the same size no matter the distance from the participant.
 x parameter generated from getX(), y parameter generated from getY(), distance is z value from z = 0 given by 'distance', radius is randomly generated between 'rLow' and 'rHigh'.
@@ -81,13 +83,13 @@ If the average radius of all 8 spheres is between 'rAvgLow' and 'rAvgHigh', the 
 def makeSpheres(count, distance, rL, rH):
 	
 	'''
-	Helper method for makeSpheres that finds the x value within the imaginary circumference to place the sphere at. 
+	finds the x value within the imaginary circumference to place the sphere at. 
 	'''
 	def getX(angle, distance):
 		return circleCenterX + ((cirlceRadius * distance) * math.cos(angle))
 
 	'''
-	Helper method for makeSpheres that finds the y value within the imaginary circumferecne to place the sphere at. 
+	finds the y value within the imaginary circumferecne to place the sphere at. 
 	'''
 	def getY(angle, distance):
 		return participantHeight + ((cirlceRadius * distance) * math.sin(angle))
@@ -158,7 +160,7 @@ def response(dist):
 	'''
 	def onKeyDown():
 		'''
-		every time it is called, will multiply 'scale_factor' by 'valueToScaleBy' for individual trial.
+		will multiply 'scale_factor' by 'valueToScaleBy'.
 		'''
 		def increase_scale(sphere):
 			global scale_factor
@@ -166,16 +168,16 @@ def response(dist):
 			sphere.setScale([scale_factor, scale_factor, scale_factor])
 
 		'''
-		every time it is called, will divide 'scale_factor' by 'valueToScaleBy' for individual trial.
+		will divide 'scale_factor' by 'valueToScaleBy'.
 		'''
 		def decrease_scale(sphere):
 			global scale_factor
 			scale_factor /= valueToScaleBy
 			sphere.setScale([scale_factor, scale_factor, scale_factor])
 			
-		if controller.getTrackpad()[0] < -0.1:
+		if controller.getThumbstick()[0] < -0.1:
 			decrease_scale(spheresOut[0])
-		elif controller.getTrackpad()[0] > 0.1:
+		elif controller.getThumbstick()[0] > 0.1:
 			increase_scale(spheresOut[0])
 		else:
 			pass
@@ -199,17 +201,41 @@ def response(dist):
 	responded = viztask.waitSensorDown(controller, endResponseInput)
 	waitTime = viztask.waitTime(timeToScale)
 	
-	time = yield viztask.waitAny([waitTime,responded])
 	
-	# makes it so participant cannot change 'scale_factor' outside of response time.
+	#waits until participant responds or time limit is reached, then stops participant input
+	time = yield viztask.waitAny([waitTime,responded])
 	responseUpdater.setEnabled(viz.OFF)
-	 
-	#probeResponse = [probe starting radius, final scale factor, final probe radius, if participant responded]
+	
+	#putput of variables
 	noResponse = 0
 	if time.condition == waitTime:
 		noResponse = 1
-		
+	
 	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
+	
+'''
+
+'''
+def learningPhase():
+	#participant sees this
+	instructions = """This experiment """ #FINISH THIS
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
+	
+	#instructor sees this
+	info = vizinfo.InfoPanel("Have participant press") #FINISH THIS
+	info.visible(viz.ON)
+	
+	#wait for conformation and removes info panels
+	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+	info.remove()
+	panel.remove()
 	
 
 	
@@ -224,23 +250,22 @@ def experiment():
 	global SphereList
 	global trialProbeResponse
 	
-	# runs through all trials stored in 'sphereList'
-	for i in range(len(sphereList)):
-		#print(i)
-		yield showFixationPoint(sphereList[i][0][2])
-		yield viztask.waitTime(fixationShowPause)
-		yield addSpheres(sphereList[i])
-		yield viztask.waitTime(trialShowPause)
-		yield removeSpheres()
+
+	for i in range(len(sphereList)): # runs through all trials stored in 'sphereList'
+		yield showFixationPoint(sphereList[i][0][2]) #shows fixation cross
+		yield viztask.waitTime(fixationShowPause) #pause
+		yield addSpheres(sphereList[i]) #shows trial spheres
+		yield viztask.waitTime(trialShowPause) #pause
+		yield removeSpheres() #removes cross and spheres
 		
-		startTime = viz.tick()
-		probe = yield response(sphereList[i][0][2])
-		responseTime = viz.tick() - startTime
+		startTime = viz.tick() #starts timing response time
+		probe = yield response(sphereList[i][0][2]) #response portion of trial is performed
+		responseTime = viz.tick() - startTime #response time is recorded
 		resp = [probe, responseTime]
 		trialProbeResponse.append(resp)
+		yield removeSpheres() #removes probe sphere
 		
-		yield removeSpheres()
-	writeOut()
+	writeOut() #writes all data to file
 	print("experiment over")
 
 
@@ -265,14 +290,19 @@ def writeOut():
 			f.write(str(st))
 		
 		return out
-		
+	
+	'''
+	outputs each trial sphere to string format that works with csv output
+	'''
 	def sphereToString(s):
 		tempString = ""
 		for i in range(len(s)):
 			tempString += "(" + str(s[i][0]) + ";" + str(s[i][1]) + ";" + str(s[i][2]) + ";" + str(s[i][3]) + "),"
 		return tempString[0:-1]
 
-
+	'''
+	gets average of trial sphere radii for a trial
+	'''
 	def sphereTrialAverageRadius(s):
 		total = 0
 		for i in range(len(s)):
@@ -331,7 +361,7 @@ if __name__ == '__main__':
 		controller.line.visible(True)#if it's set to true then we'll always see the controlller liner
 	
 	#getting participant height #### DO THIS SOMEWHERE ELSE AFTER TESTING ####
-	participantHeight = viz.MainView.getPosition()[1]
+	participantHeight = 1.82
 	
 	#grey grid #### REMOVE/ CHANGE AFTER TESTING ####
 	grid = vizshape.addGrid()
