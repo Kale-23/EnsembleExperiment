@@ -3,16 +3,21 @@ import viztask
 import vizact
 import vizshape
 import vizinfo
-import os
+
+import steamvr
+import vizdlg
 
 import random
 import math
 from statistics import mean
+import os
 
-import steamvr
+
 
 ##### GLOBALS #####
 ###################
+
+participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
 count = 5 # How many spheres trials to create at a certain distance
@@ -46,7 +51,7 @@ valueToScaleBy = 1.005 # value by which the scale factor of the probe is increas
 endResponseInput = steamvr.BUTTON_TRIGGER # participant input that confirms their probe size and ends response portion of trial.
 timeToScale = 10 # max time participant has to scale probe sphere and submit answer.
 
-# globals
+# global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
 spheresOut = [] # Will hold any sphere entity that is currently being shown in the environment, is emptied anytime removeSpheres is called
 trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
@@ -54,6 +59,7 @@ trialProbeResponse = [] # holds the data of participant probe sphere responses f
 
 ##### METHODS #####
 ###################
+
 
 '''
 Creates the '+' mark within the middle of the imaginary circumference. 
@@ -217,8 +223,19 @@ def response(dist):
 
 '''
 def learningPhase():
-	#participant sees this
-	instructions = """This experiment """ #FINISH THIS
+	#participant sees instructions
+	instructions = """Your task is to estimate the average size of spheres. 
+You will be shown a fixation point, which you must focus on.
+Spheres will appear around the fixation point, but please stay focused 
+on the fixation point. After a short time, the spheres will
+dissapear, and a new sphere will appear. Using your controller,
+you can press left to make the sphere smaller, and right
+to make it larger. To the best of your ability, make the size
+of this sphere match the average size of the previous spheres.
+
+Press the trigger button when you are ready to continue"""
+
+	panel = viz.addText(instructions)
 	panel.alignment(viz.ALIGN_LEFT_CENTER)
 	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
 	panel.resolution(1)
@@ -228,14 +245,49 @@ def learningPhase():
 	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
 	textLink.setOffset([-50,0,100])
 	
-	#instructor sees this
-	info = vizinfo.InfoPanel("Have participant press") #FINISH THIS
+	#instructor sees info
+	info = vizinfo.InfoPanel("Participant is reading tutorial.")
 	info.visible(viz.ON)
 	
 	#wait for conformation and removes info panels
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 	info.remove()
 	panel.remove()
+	
+	yield viztask.waitTime(0.5) #test timing, mainly so no accidental skip of next instruction panel
+	
+	instructions = """Please make yourself comfortable in your chair.
+The position you are in now will have to be held
+throughout the experiment, so that your height 
+and orientation remains constant. Please stay in 
+this position until the experiment is over.
+
+Press the trigger button when you are in position and ready to continue"""
+	
+	panel = viz.addText(instructions)
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
+	
+	info = vizinfo.InfoPanel("Participant is begining information collection.")
+	info.visible(viz.ON)
+	
+	#wait for conformation and removes info panels
+	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+	info.remove()
+	panel.remove()
+	
+	global participantHeight
+	participantHeight = viz.MainView.getPosition()[1]
+	hmdSensor = hmd.getSensor()#it gives the same as when you grap the mainview when you call for the sensor position :)
+	print("height of participant", participantHeight, "HMD Height:",hmdSensor.getPosition()[1])
+	
+	
 	
 
 	
@@ -250,7 +302,16 @@ def experiment():
 	global SphereList
 	global trialProbeResponse
 	
+	#learning phase/ records participant height
+	yield learningPhase()
+	
+	#have to be made after learning phase so height is accurate
+	makeSpheres(count, distance1, rLow, rHigh)
+	makeSpheres(count, distance2, rLow, rHigh)
+	makeSpheres(count, distance3, rLow, rHigh)
+	random.shuffle(sphereList)
 
+	#testing phase, runs through all trials
 	for i in range(len(sphereList)): # runs through all trials stored in 'sphereList'
 		yield showFixationPoint(sphereList[i][0][2]) #shows fixation cross
 		yield viztask.waitTime(fixationShowPause) #pause
@@ -264,8 +325,23 @@ def experiment():
 		resp = [probe, responseTime]
 		trialProbeResponse.append(resp)
 		yield removeSpheres() #removes probe sphere
-		
-	writeOut() #writes all data to file
+	
+	#takes information and writes to new file
+	writeOut()
+	
+	instructions = """The experiment is now over
+you may remove the headset and controller.
+Thank you for your time."""
+	
+	panel = viz.addText(instructions)
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
 	print("experiment over")
 
 
@@ -318,10 +394,10 @@ def writeOut():
 	filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
-			outfile.write("ID,age,gender,hand,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
+			outfile.write("ID,age,gender,hand,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, "ageTest", "genderTest", "handTest", i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, "ageTest", "genderTest", "handTest", participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
@@ -342,7 +418,7 @@ if __name__ == '__main__':
 	hmd = steamvr.HMD()
 	if not hmd.getSensor():
 		sys.exit('SteamVR HMD not detected')
-	
+		
 	navigationNode = viz.addGroup()
 	viewLink = viz.link(navigationNode, viz.MainView)
 	viewLink.preMultLinkable(hmd.getSensor())
@@ -360,18 +436,11 @@ if __name__ == '__main__':
 		controller.line.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
 		controller.line.visible(True)#if it's set to true then we'll always see the controlller liner
 	
-	#getting participant height #### DO THIS SOMEWHERE ELSE AFTER TESTING ####
-	participantHeight = 1.82
-	
 	#grey grid #### REMOVE/ CHANGE AFTER TESTING ####
 	grid = vizshape.addGrid()
 	grid.color(viz.GRAY)
 	
 	#experiment run from here
-	makeSpheres(count, distance1, rLow, rHigh)
-	makeSpheres(count, distance2, rLow, rHigh)
-	makeSpheres(count, distance3, rLow, rHigh)
-	random.shuffle(sphereList)
 
 	theExperiment = viztask.schedule(experiment())
 		
