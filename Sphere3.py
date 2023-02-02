@@ -20,10 +20,10 @@ import os
 participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
-count = 5 # How many spheres trials to create at a certain distance
+count = 15 # How many spheres trials to create at a certain distance
 distance1 = 4 # Distance from zero of foreground trials
-distance2 = 6 # Distance from zero of Middle trials
-distance3 = 8 # Distance from zero of Background trials
+distance2 = 10 # Distance from zero of Middle trials
+distance3 = 16 # Distance from zero of Background trials
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 cirlceRadius = 2 # Radius of circumference
@@ -49,7 +49,7 @@ valueToScaleBy = 1.005 # value by which the scale factor of the probe is increas
 
 # response parameters
 endResponseInput = steamvr.BUTTON_TRIGGER # participant input that confirms their probe size and ends response portion of trial.
-timeToScale = 10 # max time participant has to scale probe sphere and submit answer.
+timeToScale = 60 # max time participant has to scale probe sphere and submit answer.
 
 # global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
@@ -65,15 +65,16 @@ trialProbeResponse = [] # holds the data of participant probe sphere responses f
 Creates the '+' mark within the middle of the imaginary circumference. 
 The fixation point will be shown at the same distance as the spheres, and will scale with distance so as to always appear to be same size.
 '''
-def showFixationPoint(dist):
+def showFixationPoint():
 	global spheresOut
+	global distance2
 	
-	box1 = vizshape.addBox(size=(0.5, 0.1, 0.1), color = viz.WHITE)
-	box2 = vizshape.addBox(size=(0.1, 0.5, 0.1), color = viz.WHITE)
-	box1.setPosition(0,participantHeight,dist)
-	box1.setScale([dist / distance2, dist / distance2, dist / distance2])
-	box2.setPosition(0,participantHeight,dist)
-	box2.setScale([dist / distance2, dist / distance2, dist / distance2])
+	box1 = vizshape.addBox(size=(0.25, 0.05, 0.05), color = viz.WHITE)
+	box2 = vizshape.addBox(size=(0.05, 0.25, 0.05), color = viz.WHITE)
+	box1.setPosition(0,participantHeight,distance2)
+	#box1.setScale([dist / distance2, dist / distance2, dist / distance2])
+	box2.setPosition(0,participantHeight,distance2)
+	#box2.setScale([dist / distance2, dist / distance2, dist / distance2])
 	spheresOut.append(box1)
 	spheresOut.append(box2)
 	
@@ -181,9 +182,9 @@ def response(dist):
 			scale_factor /= valueToScaleBy
 			sphere.setScale([scale_factor, scale_factor, scale_factor])
 			
-		if controller.getThumbstick()[0] < -0.1:
+		if controller.getThumbstick()[1] < -0.1:
 			decrease_scale(spheresOut[0])
-		elif controller.getThumbstick()[0] > 0.1:
+		elif controller.getThumbstick()[1] > 0.1:
 			increase_scale(spheresOut[0])
 		else:
 			pass
@@ -191,12 +192,13 @@ def response(dist):
 
 	global spheresOut
 	global scale_factor
+	global distance2
 	spheresOut = []
 	
 	# Probe setupt and output to environment
 	probeRadius = random.uniform(probeRadLow, probeRadHigh)
 	probe = vizshape.addSphere(probeRadius)
-	probe.setPosition(0, participantHeight, dist)
+	probe.setPosition(0, participantHeight, distance2)
 	spheresOut.append(probe)
 	
 	# Set the initial scaling factor for the probe in this trial
@@ -313,7 +315,8 @@ def experiment():
 
 	#testing phase, runs through all trials
 	for i in range(len(sphereList)): # runs through all trials stored in 'sphereList'
-		yield showFixationPoint(sphereList[i][0][2]) #shows fixation cross
+		print(sphereList[i][0][2])
+		yield showFixationPoint() #shows fixation cross
 		yield viztask.waitTime(fixationShowPause) #pause
 		yield addSpheres(sphereList[i]) #shows trial spheres
 		yield viztask.waitTime(trialShowPause) #pause
@@ -329,6 +332,7 @@ def experiment():
 	#takes information and writes to new file
 	writeOut()
 	
+	#lets the participant know the experiment is over
 	instructions = """The experiment is now over
 you may remove the headset and controller.
 Thank you for your time."""
@@ -434,7 +438,7 @@ if __name__ == '__main__':
 		viz.vertex([0,0,100])
 		controller.line = viz.endLayer(parent=controller.model)
 		controller.line.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
-		controller.line.visible(True)#if it's set to true then we'll always see the controlller liner
+		controller.line.visible(False)#if it's set to true then we'll always see the controlller liner
 	
 	#grey grid #### REMOVE/ CHANGE AFTER TESTING ####
 	grid = vizshape.addGrid()
