@@ -80,6 +80,7 @@ def showFixationPoint():
 	
 
 
+
 '''
 Creates 8 spheres for each trial. 
 Sphere parameters will be gennerated every 45 degrees (+/- 'jitter') around the imaginary circumference starting at 0 degrees up to 315 degrees. 
@@ -225,6 +226,37 @@ def response(dist):
 
 '''
 def learningPhase():
+	
+	# addRayPrimitive taken from @ischtz on github
+	def addRayPrimitive(origin, direction, length=100, color=viz.RED, alpha=0.6, linewidth=3, parent=None):
+		""" Create a Vizard ray primitive from two vertices. Can be used
+		to e.g. indicate a raycast or gaze vector in a VR environment.
+		
+		Args:
+			origin (3-tuple): Ray origin
+			direction (3-tuple): Unit direction vector
+			length (float): Ray length (set to 1 and use direction=<end>
+				to draw point-to-point ray)
+			color (3-tuple): Ray color
+			alpha (float): Ray alpha value
+			linewidth (int): OpenGL line drawing width in pixels
+			parent: Vizard node to use as parent
+		"""
+		viz.startLayer(viz.LINES)
+		viz.lineWidth(linewidth)
+		viz.vertexColor(color)
+		viz.vertex(origin)
+		viz.vertex([x * length for x in direction])
+		ray = viz.endLayer()
+		ray.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
+		ray.alpha(alpha)
+		if parent is not None:
+			ray.setParent(parent)
+		return ray
+		
+		
+	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE))
+	
 	#participant sees instructions
 	instructions = """Your task is to estimate the average size of spheres. 
 You will be shown a fixation point, which you must focus on.
@@ -290,8 +322,8 @@ Press the trigger button when you are in position and ready to continue"""
 	print("height of participant", participantHeight, "HMD Height:",hmdSensor.getPosition()[1])
 	
 	
+	removeSpheres()
 	
-
 	
 '''
 for each trial in 'sphereList':
