@@ -20,7 +20,7 @@ import os
 participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
-count = 15 # How many spheres trials to create at a certain distance
+count = 1 # How many spheres trials to create at a certain distance
 distance1 = 4 # Distance from zero of foreground trials
 distance2 = 10 # Distance from zero of Middle trials
 distance3 = 16 # Distance from zero of Background trials
@@ -55,7 +55,7 @@ timeToScale = 60 # max time participant has to scale probe sphere and submit ans
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
 spheresOut = [] # Will hold any sphere entity that is currently being shown in the environment, is emptied anytime removeSpheres is called
 trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
-
+data = [] # holds participant data collected at end in info panel
 
 ##### METHODS #####
 ###################
@@ -137,6 +137,7 @@ def addSpheres(spheres):
 	
 	for s in spheres:
 		sphereAdd = vizshape.addSphere(s[3] * (s[2] / distance2))
+		sphereAdd.lighting = True
 		sphereAdd.setPosition(s[0], s[1], s[2])
 		spheresOut.append(sphereAdd)
 
@@ -253,9 +254,6 @@ def learningPhase():
 		if parent is not None:
 			ray.setParent(parent)
 		return ray
-		
-		
-	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE))
 	
 	#participant sees instructions
 	instructions = """Your task is to estimate the average size of spheres. 
@@ -263,7 +261,7 @@ You will be shown a fixation point, which you must focus on.
 Spheres will appear around the fixation point, but please stay focused 
 on the fixation point. After a short time, the spheres will
 dissapear, and a new sphere will appear. Using your controller,
-you can press left to make the sphere smaller, and right
+you can press down to make the sphere smaller, and up
 to make it larger. To the best of your ability, make the size
 of this sphere match the average size of the previous spheres.
 
@@ -290,10 +288,11 @@ Press the trigger button when you are ready to continue"""
 	
 	yield viztask.waitTime(0.5) #test timing, mainly so no accidental skip of next instruction panel
 	
-	instructions = """Please make yourself comfortable in your chair.
-The position you are in now will have to be held
-throughout the experiment, so that your height 
-and orientation remains constant. Please stay in 
+	instructions = """Please line yourself with your head directly over 
+the blue line below, and make yourself comfortable
+in your chair. The position you are in now will have
+to be held throughout the experiment, so that your
+height and orientation remains constant. Please stay in 
 this position until the experiment is over.
 
 Press the trigger button when you are in position and ready to continue"""
@@ -308,21 +307,82 @@ Press the trigger button when you are in position and ready to continue"""
 	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
 	textLink.setOffset([-50,0,100])
 	
+	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
 	info = vizinfo.InfoPanel("Participant is begining information collection.")
 	info.visible(viz.ON)
 	
-	#wait for conformation and removes info panels
+	#wait for conformation and removes info panels/ alignment ray
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 	info.remove()
 	panel.remove()
+	removeSpheres() #removes alignment ray
 	
+	#taking participant height
 	global participantHeight
 	participantHeight = viz.MainView.getPosition()[1]
-	hmdSensor = hmd.getSensor()#it gives the same as when you grap the mainview when you call for the sensor position :)
-	print("height of participant", participantHeight, "HMD Height:",hmdSensor.getPosition()[1])
 	
+	#set lighting for experiment
+	headLight = viz.MainView.getHeadLight()
+	headLight.disable()
+	light = viz.addLight()
+	light.enable()
+	light.direction(0,0,1)
+	light.position(0,participantHeight,0)
+	light.spread(180)
+	light.intensity(1.5)
 	
-	removeSpheres()
+	floor = vizshape.addPlane(size=(50.0,50.0),axis=vizshape.AXIS_Y,cullFace=True, lighting=True, pos=(0,-2.5,0))
+	#wall = vizshape.addPlane(size=(50,50),axis=vizshape.AXIS_Z,cullFace=True, lighting=True, pos=(0,0,20), flipFaces=True)
+	
+def participantInfo():
+	
+	info = vizinfo.InfoPanel("", title = "Please put in your information", margin = (100, 100), align = viz.ALIGN_CENTER_TOP) #will have to adjust for vr headset
+	
+	rightHanded = info.addLabelItem('Right Handed', viz.addRadioButton('handed'))
+	leftHanded = info.addLabelItem('Left Handed', viz.addRadioButton('handed'))
+	
+	info.addSeparator()
+	ages = []
+	age = info.addLabelItem('Age',viz.addDropList())
+	for i in range(18,40):
+		ages.append(str(i))
+	age.addItems(ages)
+	
+	info.addSeparator()
+	#gender = info.addLabelItem("gender", viz.addDropList())
+	#age.addItems(['male','female','other','prefer not to say'])
+	
+	female = info.addLabelItem('female', viz.addRadioButton('gender'))
+	male = info.addLabelItem('male', viz.addRadioButton('gender'))
+	other = info.addLabelItem('other', viz.addRadioButton('gender'))
+	none = info.addLabelItem('prefer not to say', viz.addRadioButton('gender'))
+	
+	info.addSeparator()
+	submitButton = info.addItem(viz.addButtonLabel('Submit'),align=viz.ALIGN_RIGHT_CENTER)
+
+	yield viztask.waitButtonUp(submitButton)
+	
+	handedData = ''
+	if rightHanded.get() == viz.DOWN:
+		handedData = 'right'
+	else:
+		handedData = 'left'
+	ageData = age.getSelection()
+	genderData = ''
+	if female.get() == viz.DOWN:
+		genderData = 'female'
+	elif male.get() == viz.DOWN:
+		genderData = 'male'
+	elif other.get() == viz.DOWN:
+		genderData = 'other'
+	else:
+		genderData = 'no answer'
+	
+	data = [handedData, ageData + 18, genderData]
+	
+	info.remove()
+
+	viztask.returnValue(data)
 	
 	
 '''
@@ -338,6 +398,11 @@ def experiment():
 	
 	#learning phase/ records participant height
 	yield learningPhase()
+	
+	##grey grid setup
+	#grid = vizshape.addGrid(boldStep=0)
+	#grid.color(viz.GRAY)
+	
 	
 	#have to be made after learning phase so height is accurate
 	makeSpheres(count, distance1, rLow, rHigh)
@@ -360,13 +425,13 @@ def experiment():
 		resp = [probe, responseTime]
 		trialProbeResponse.append(resp)
 		yield removeSpheres() #removes probe sphere
-	
-	#takes information and writes to new file
-	writeOut()
+		
+
 	
 	#lets the participant know the experiment is over
 	instructions = """The experiment is now over
 you may remove the headset and controller.
+Please answer the brief questions located on the main monitor.
 Thank you for your time."""
 	
 	panel = viz.addText(instructions)
@@ -378,6 +443,13 @@ Thank you for your time."""
 	panel.fontSize(4)
 	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
 	textLink.setOffset([-50,0,100])
+	
+	global data
+	data = yield participantInfo()
+	
+		#takes information and writes to new file
+	writeOut()
+	
 	print("experiment over")
 
 
@@ -433,7 +505,7 @@ def writeOut():
 			outfile.write("ID,age,gender,hand,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, "ageTest", "genderTest", "handTest", participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
@@ -472,12 +544,7 @@ if __name__ == '__main__':
 		controller.line.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
 		controller.line.visible(False)#if it's set to true then we'll always see the controlller liner
 	
-	#grey grid #### REMOVE/ CHANGE AFTER TESTING ####
-	grid = vizshape.addGrid()
-	grid.color(viz.GRAY)
-	
 	#experiment run from here
 
 	theExperiment = viztask.schedule(experiment())
-		
 	
