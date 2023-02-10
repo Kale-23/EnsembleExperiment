@@ -20,10 +20,10 @@ import os
 participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
-count = 1 # How many spheres trials to create at a certain distance
-distance1 = 4 # Distance from zero of foreground trials
+count = 5 # How many spheres trials to create at a certain distance
+distance1 = 2 # Distance from zero of foreground trials
 distance2 = 10 # Distance from zero of Middle trials
-distance3 = 16 # Distance from zero of Background trials
+distance3 = 30 # Distance from zero of Background trials
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 cirlceRadius = 2 # Radius of circumference
@@ -31,7 +31,7 @@ circleCenterX = 0 # where the center of the circumference will be placed on the 
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
 
 # Pause times between events of experiment
-trialShowPause = 1 #time to pause after showing the trial spheres
+trialShowPause = 4 #time to pause after showing the trial spheres
 fixationShowPause = 0.5 #time the fixation point is on screen before spheres show
 betweenTrialPause = 0 #time between submission of probe sphere and next trial start
 
@@ -56,6 +56,12 @@ sphereList = [] # All spheres and trials are pregenerated before running the exp
 spheresOut = [] # Will hold any sphere entity that is currently being shown in the environment, is emptied anytime removeSpheres is called
 trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
 data = [] # holds participant data collected at end in info panel
+
+grid = viz.addTexture('VRStuff\grid.jpg')
+grid.wrap(viz.WRAP_T, viz.REPEAT)
+grid.wrap(viz.WRAP_S, viz.REPEAT)
+
+matrix = vizmat.Transform()
 
 ##### METHODS #####
 ###################
@@ -134,10 +140,16 @@ takes a list of sphere parameters, adds them to the environment, and adds them t
 '''
 def addSpheres(spheres):
 	global spheresOut
+	global grid
+	global matrix
 	
 	for s in spheres:
 		sphereAdd = vizshape.addSphere(s[3] * (s[2] / distance2))
 		sphereAdd.lighting = True
+		#matrix.setScale([1,1,1])
+		#sphereAdd.texmat( matrix )
+		sphereAdd.texture(grid)
+
 		sphereAdd.setPosition(s[0], s[1], s[2])
 		spheresOut.append(sphereAdd)
 
