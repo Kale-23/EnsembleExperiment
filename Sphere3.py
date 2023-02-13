@@ -20,10 +20,11 @@ import os
 participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
-count = 5 # How many spheres trials to create at a certain distance
-distance1 = 2 # Distance from zero of foreground trials
+learningCount = 1 # How many trials for each distance in learning phase
+count = 2 # How many trials for each distance in experimental phase
+distance1 = 6 # Distance from zero of foreground trials
 distance2 = 10 # Distance from zero of Middle trials
-distance3 = 30 # Distance from zero of Background trials
+distance3 = 14 # Distance from zero of Background trials
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 cirlceRadius = 2 # Radius of circumference
@@ -31,7 +32,7 @@ circleCenterX = 0 # where the center of the circumference will be placed on the 
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
 
 # Pause times between events of experiment
-trialShowPause = 4 #time to pause after showing the trial spheres
+trialShowPause = 1 #time to pause after showing the trial spheres
 fixationShowPause = 0.5 #time the fixation point is on screen before spheres show
 betweenTrialPause = 0 #time between submission of probe sphere and next trial start
 
@@ -83,9 +84,6 @@ def showFixationPoint():
 	#box2.setScale([dist / distance2, dist / distance2, dist / distance2])
 	spheresOut.append(box1)
 	spheresOut.append(box2)
-	
-
-
 
 '''
 Creates 8 spheres for each trial. 
@@ -94,7 +92,7 @@ The imaginary circumference will always appear to be the same size no matter the
 x parameter generated from getX(), y parameter generated from getY(), distance is z value from z = 0 given by 'distance', radius is randomly generated between 'rLow' and 'rHigh'.
 If the average radius of all 8 spheres is between 'rAvgLow' and 'rAvgHigh', the trial is accepted and added to 'sphereList', else it is thrown out and new parameters are chosen.
 '''
-def makeSpheres(count, distance, rL, rH):
+def makeSpheres(count, distance, rL, rH, slist):
 	
 	'''
 	finds the x value within the imaginary circumference to place the sphere at. 
@@ -131,7 +129,7 @@ def makeSpheres(count, distance, rL, rH):
 			meanRadius.append(radius)
 		
 		if rAvgHigh > mean(meanRadius) > rAvgLow:
-			sphereList.append(spheres)
+			slist.append(spheres)
 			tempCount += 1
 	
 
@@ -146,8 +144,8 @@ def addSpheres(spheres):
 	for s in spheres:
 		sphereAdd = vizshape.addSphere(s[3] * (s[2] / distance2))
 		sphereAdd.lighting = True
-		#matrix.setScale([1,1,1])
-		#sphereAdd.texmat( matrix )
+		matrix.setScale([s[3] * (s[2] / distance2),s[3] * (s[2] / distance2),s[3] * (s[2] / distance2)])
+		sphereAdd.texmat( matrix )
 		sphereAdd.texture(grid)
 
 		sphereAdd.setPosition(s[0], s[1], s[2])
@@ -278,7 +276,6 @@ to make it larger. To the best of your ability, make the size
 of this sphere match the average size of the previous spheres.
 
 Press the trigger button when you are ready to continue"""
-
 	panel = viz.addText(instructions)
 	panel.alignment(viz.ALIGN_LEFT_CENTER)
 	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
@@ -288,11 +285,9 @@ Press the trigger button when you are ready to continue"""
 	panel.fontSize(4)
 	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
 	textLink.setOffset([-50,0,100])
-	
 	#instructor sees info
 	info = vizinfo.InfoPanel("Participant is reading tutorial.")
 	info.visible(viz.ON)
-	
 	#wait for conformation and removes info panels
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 	info.remove()
@@ -308,7 +303,6 @@ height and orientation remains constant. Please stay in
 this position until the experiment is over.
 
 Press the trigger button when you are in position and ready to continue"""
-	
 	panel = viz.addText(instructions)
 	panel.alignment(viz.ALIGN_LEFT_CENTER)
 	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
@@ -320,10 +314,9 @@ Press the trigger button when you are in position and ready to continue"""
 	textLink.setOffset([-50,0,100])
 	
 	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
-	info = vizinfo.InfoPanel("Participant is begining information collection.")
-	info.visible(viz.ON)
 	
-	#wait for conformation and removes info panels/ alignment ray
+	info = vizinfo.InfoPanel("Participant is about to take height.")
+	info.visible(viz.ON)
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 	info.remove()
 	panel.remove()
@@ -333,18 +326,80 @@ Press the trigger button when you are in position and ready to continue"""
 	global participantHeight
 	participantHeight = viz.MainView.getPosition()[1]
 	
+	yield viztask.waitTime(0.5)
+	
+	instructions = """You will now begin with practice trials.
+The instructor can provide guidance on
+these practice trials trials. You will be notified again
+when the experimental trials begin.
+
+Press the trigger button when you are ready to start"""
+	panel = viz.addText(instructions)
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
+	info = vizinfo.InfoPanel("Participant is begining practice trials.")
+	info.visible(viz.ON)
+	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+	info.remove()
+	panel.remove()
+	
 	#set lighting for experiment
 	headLight = viz.MainView.getHeadLight()
-	headLight.disable()
-	light = viz.addLight()
-	light.enable()
-	light.direction(0,0,1)
-	light.position(0,participantHeight,0)
-	light.spread(180)
-	light.intensity(1.5)
+	#headLight.disable()
+	#light = viz.addLight()
+	#light.enable()
+	#light.direction(0,0,1)
+	#light.position(0,participantHeight,0)
+	#light.spread(180)
+	#light.intensity(1.5)
 	
 	floor = vizshape.addPlane(size=(50.0,50.0),axis=vizshape.AXIS_Y,cullFace=True, lighting=True, pos=(0,-2.5,0))
 	#wall = vizshape.addPlane(size=(50,50),axis=vizshape.AXIS_Z,cullFace=True, lighting=True, pos=(0,0,20), flipFaces=True)
+	
+	learningList = []
+	makeSpheres(learningCount, distance1, rLow, rHigh, learningList)
+	makeSpheres(learningCount, distance2, rLow, rHigh, learningList)
+	makeSpheres(learningCount, distance3, rLow, rHigh, learningList)
+	random.shuffle(learningList)
+	
+	for i in range(len(learningList)): # runs through all trials stored in 'sphereList'
+		print(learningList[i][0][2])
+		yield showFixationPoint() #shows fixation cross
+		yield viztask.waitTime(fixationShowPause) #pause
+		yield addSpheres(learningList[i]) #shows trial spheres
+		yield viztask.waitTime(trialShowPause) #pause
+		yield removeSpheres() #removes cross and spheres
+		
+		yield response(learningList[i][0][2]) #response portion of trial is performed
+		yield removeSpheres() #removes probe sphere
+	
+	
+	instructions = """The learning phase is
+over. The experiment will now begin.
+
+Press the trigger button when you are ready to start"""
+	panel = viz.addText(instructions)
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
+	info = vizinfo.InfoPanel("Participant is begining experimental trials.")
+	info.visible(viz.ON)
+	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+	info.remove()
+	panel.remove()
+	
+	
 	
 def participantInfo():
 	
@@ -396,6 +451,32 @@ def participantInfo():
 
 	viztask.returnValue(data)
 	
+def vrSetup():
+	#headset
+	hmd = steamvr.HMD()
+	if not hmd.getSensor():
+		sys.exit('SteamVR HMD not detected')
+		
+	navigationNode = viz.addGroup()
+	viewLink = viz.link(navigationNode, viz.MainView)
+	viewLink.preMultLinkable(hmd.getSensor())
+		
+	#controller
+	global controller
+	for controller in steamvr.getControllerList():
+		controller.model = controller.addModel(parent=navigationNode)
+		controller.model.disable(viz.INTERSECTION)
+		viz.link(controller, controller.model)
+		
+		viz.startLayer(viz.LINES)
+		viz.vertexColor(viz.WHITE)
+		viz.vertex([0,0,0])
+		viz.vertex([0,0,100])
+		controller.line = viz.endLayer(parent=controller.model)
+		controller.line.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
+		controller.line.visible(False)#if it's set to true then we'll always see the controlller liner
+	
+	
 	
 '''
 for each trial in 'sphereList':
@@ -408,6 +489,10 @@ def experiment():
 	global SphereList
 	global trialProbeResponse
 	
+	global data
+	data = yield participantInfo()
+	
+	vrSetup()
 	#learning phase/ records participant height
 	yield learningPhase()
 	
@@ -417,9 +502,9 @@ def experiment():
 	
 	
 	#have to be made after learning phase so height is accurate
-	makeSpheres(count, distance1, rLow, rHigh)
-	makeSpheres(count, distance2, rLow, rHigh)
-	makeSpheres(count, distance3, rLow, rHigh)
+	makeSpheres(count, distance1, rLow, rHigh, sphereList)
+	makeSpheres(count, distance2, rLow, rHigh, sphereList)
+	makeSpheres(count, distance3, rLow, rHigh, sphereList)
 	random.shuffle(sphereList)
 
 	#testing phase, runs through all trials
@@ -438,12 +523,9 @@ def experiment():
 		trialProbeResponse.append(resp)
 		yield removeSpheres() #removes probe sphere
 		
-
-	
 	#lets the participant know the experiment is over
 	instructions = """The experiment is now over
 you may remove the headset and controller.
-Please answer the brief questions located on the main monitor.
 Thank you for your time."""
 	
 	panel = viz.addText(instructions)
@@ -456,12 +538,8 @@ Thank you for your time."""
 	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
 	textLink.setOffset([-50,0,100])
 	
-	global data
-	data = yield participantInfo()
-	
 		#takes information and writes to new file
 	writeOut()
-	
 	print("experiment over")
 
 
@@ -534,29 +612,6 @@ if __name__ == '__main__':
 	viz.fov(60)
 	viz.go()
 	
-	#vr setup
-	hmd = steamvr.HMD()
-	if not hmd.getSensor():
-		sys.exit('SteamVR HMD not detected')
-		
-	navigationNode = viz.addGroup()
-	viewLink = viz.link(navigationNode, viz.MainView)
-	viewLink.preMultLinkable(hmd.getSensor())
-		
-	for controller in steamvr.getControllerList():
-		controller.model = controller.addModel(parent=navigationNode)
-		controller.model.disable(viz.INTERSECTION)
-		viz.link(controller, controller.model)
-		
-		viz.startLayer(viz.LINES)
-		viz.vertexColor(viz.WHITE)
-		viz.vertex([0,0,0])
-		viz.vertex([0,0,100])
-		controller.line = viz.endLayer(parent=controller.model)
-		controller.line.disable([viz.INTERSECTION, viz.SHADOW_CASTING])
-		controller.line.visible(False)#if it's set to true then we'll always see the controlller liner
-	
 	#experiment run from here
-
 	theExperiment = viztask.schedule(experiment())
 	
