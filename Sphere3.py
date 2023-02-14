@@ -23,8 +23,8 @@ participantHeight = 0 #recorded during learning phase
 learningCount = 1 # How many trials for each distance in learning phase
 count = 2 # How many trials for each distance in experimental phase
 distance1 = 6 # Distance from zero of foreground trials
-distance2 = 10 # Distance from zero of Middle trials
-distance3 = 14 # Distance from zero of Background trials
+distance2 = 12 # Distance from zero of Middle trials
+distance3 = 18 # Distance from zero of Background trials
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 cirlceRadius = 2 # Radius of circumference
@@ -58,19 +58,18 @@ spheresOut = [] # Will hold any sphere entity that is currently being shown in t
 trialProbeResponse = [] # holds the data of participant probe sphere responses for each trial (probeRadius, probeResponseTime).
 data = [] # holds participant data collected at end in info panel
 
-grid = viz.addTexture('VRStuff\grid.jpg')
-grid.wrap(viz.WRAP_T, viz.REPEAT)
+#texture mapping for spheres and probe
+grid = viz.addTexture('VRStuff\grid.jpg') #importing the texture file
+grid.wrap(viz.WRAP_T, viz.REPEAT) #next two make it so texture repeats, size of texture stays the same while size of object changes
 grid.wrap(viz.WRAP_S, viz.REPEAT)
-
-matrix = vizmat.Transform()
+matrix = vizmat.Transform() #adjusted when spheres are made, makes it so texture maps correctly onto objects
 
 ##### METHODS #####
 ###################
 
 
 '''
-Creates the '+' mark within the middle of the imaginary circumference. 
-The fixation point will be shown at the same distance as the spheres, and will scale with distance so as to always appear to be same size.
+Creates the '+' fixation point. Set to show at 'distance2' for all trials to create depth. 
 '''
 def showFixationPoint():
 	global spheresOut
@@ -89,7 +88,6 @@ def showFixationPoint():
 Creates 8 spheres for each trial. 
 Sphere parameters will be gennerated every 45 degrees (+/- 'jitter') around the imaginary circumference starting at 0 degrees up to 315 degrees. 
 The imaginary circumference will always appear to be the same size no matter the distance from the participant.
-x parameter generated from getX(), y parameter generated from getY(), distance is z value from z = 0 given by 'distance', radius is randomly generated between 'rLow' and 'rHigh'.
 If the average radius of all 8 spheres is between 'rAvgLow' and 'rAvgHigh', the trial is accepted and added to 'sphereList', else it is thrown out and new parameters are chosen.
 '''
 def makeSpheres(count, distance, rL, rH, slist):
@@ -108,7 +106,6 @@ def makeSpheres(count, distance, rL, rH, slist):
 
 	global sphereList
 	placementAngle = [0, 45, 90, 135, 180, 225, 270, 315]
-	
 	
 	tempCount = 0
 	while tempCount < count:
@@ -142,17 +139,17 @@ def addSpheres(spheres):
 	global matrix
 	
 	for s in spheres:
-		sphereAdd = vizshape.addSphere(s[3] * (s[2] / distance2))
+		rad = s[3] * (s[2] / distance2) # radius adjusted for distance, also used to scale matrix for texturing
+		sphereAdd = vizshape.addSphere(rad)
 		sphereAdd.lighting = True
-		matrix.setScale([s[3] * (s[2] / distance2),s[3] * (s[2] / distance2),s[3] * (s[2] / distance2)])
+		matrix.setScale([rad, rad, rad])
 		sphereAdd.texmat( matrix )
 		sphereAdd.texture(grid)
-
 		sphereAdd.setPosition(s[0], s[1], s[2])
 		spheresOut.append(sphereAdd)
 
 '''
-removes any sphere entities within 'spheresOut' from the environement, and empties 'spheresOut'.
+removes objects (spheres, fixation point, and probe) from environment when called
 '''
 def removeSpheres():
 	global spheresOut
@@ -161,21 +158,17 @@ def removeSpheres():
 		s.remove()
 	spheresOut = []
 	
-
-
-
 '''
-creates probe sphere parameters and puts the probe into the enviromet and into 'spheresOut'. 
-The probe's radius is random between 'probeRadLow' and 'probeRadHigh', the distance is the same as the trial's that was just shown, and is always x = 0, y = 2.
-Once the probe is shown, participant is allowed input (from keyboard/ joystick/ etc). Will call onKeyDown() on any input.
-If 'endResponseInput' is input, the participant can no longer provide input until the next trial, and the current probe's initial radius and scale factor are returned.
+creates and shows probe sphere always at 'distance2'.
+The probe's radius is random between 'probeRadLow' and 'probeRadHigh'.
+participant can change probe size through 'onKeyDown' using the thumbstick.
+texture size stays the same while the probe size changes.
+once participant calls 'endKeyDown', participant response is stopped and returned.
 '''
 def response(dist):
 	
 	'''
-	when called, if 'decreaseScaleFactorInput' is input, will call decrease_scale(),
-	if 'increaseScaleFactorInput' is input, will call increase_scale(),
-	and will do nothing if any other button is pressed
+	this is what controls participant input
 	'''
 	def onKeyDown():
 		'''
@@ -196,8 +189,14 @@ def response(dist):
 			
 		if controller.getThumbstick()[1] < -0.1:
 			decrease_scale(spheresOut[0])
+			matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
+			probe.texmat( matrix )
+			probe.texture(grid)
 		elif controller.getThumbstick()[1] > 0.1:
 			increase_scale(spheresOut[0])
+			matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
+			probe.texmat( matrix )
+			probe.texture(grid)
 		else:
 			pass
 
@@ -205,11 +204,15 @@ def response(dist):
 	global spheresOut
 	global scale_factor
 	global distance2
+	global matrix
 	spheresOut = []
 	
-	# Probe setupt and output to environment
+	# Probe created and output to environment
 	probeRadius = random.uniform(probeRadLow, probeRadHigh)
 	probe = vizshape.addSphere(probeRadius)
+	matrix.setScale([probeRadius, probeRadius, probeRadius])
+	probe.texmat( matrix )
+	probe.texture(grid)
 	probe.setPosition(0, participantHeight, distance2)
 	spheresOut.append(probe)
 	
@@ -221,12 +224,11 @@ def response(dist):
 	responded = viztask.waitSensorDown(controller, endResponseInput)
 	waitTime = viztask.waitTime(timeToScale)
 	
-	
 	#waits until participant responds or time limit is reached, then stops participant input
 	time = yield viztask.waitAny([waitTime,responded])
 	responseUpdater.setEnabled(viz.OFF)
 	
-	#putput of variables
+	#output of variables, determines if participant responded or not
 	noResponse = 0
 	if time.condition == waitTime:
 		noResponse = 1
@@ -234,11 +236,14 @@ def response(dist):
 	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
 	
 '''
-
+participant gets introduction to thier task
+participant orientationa and height set, and height is recorded
+lighting and floor output to environment (?)
+learning trials occur
 '''
 def learningPhase():
 	
-	# addRayPrimitive taken from @ischtz on github
+	# addRayPrimitive from @ischtz on github
 	def addRayPrimitive(origin, direction, length=100, color=viz.RED, alpha=0.6, linewidth=3, parent=None):
 		""" Create a Vizard ray primitive from two vertices. Can be used
 		to e.g. indicate a raycast or gaze vector in a VR environment.
@@ -376,12 +381,13 @@ Press the trigger button when you are ready to start"""
 		yield viztask.waitTime(trialShowPause) #pause
 		yield removeSpheres() #removes cross and spheres
 		
-		yield response(learningList[i][0][2]) #response portion of trial is performed
+		yield response(learningList[i][0][2]) #response portion of trial is performed, returned values not recorded
 		yield removeSpheres() #removes probe sphere
 	
 	
 	instructions = """The learning phase is
 over. The experiment will now begin.
+If you have any last questions, please ask now.
 
 Press the trigger button when you are ready to start"""
 	panel = viz.addText(instructions)
@@ -399,15 +405,19 @@ Press the trigger button when you are ready to start"""
 	info.remove()
 	panel.remove()
 	
-	
-	
+"""
+creates info panel that allows participant input
+records age, gender, handedness, vision
+"""
 def participantInfo():
 	
 	info = vizinfo.InfoPanel("", title = "Please put in your information", margin = (100, 100), align = viz.ALIGN_CENTER_TOP) #will have to adjust for vr headset
 	
+	#handedness
 	rightHanded = info.addLabelItem('Right Handed', viz.addRadioButton('handed'))
 	leftHanded = info.addLabelItem('Left Handed', viz.addRadioButton('handed'))
 	
+	#age
 	info.addSeparator()
 	ages = []
 	age = info.addLabelItem('Age',viz.addDropList())
@@ -415,18 +425,22 @@ def participantInfo():
 		ages.append(str(i))
 	age.addItems(ages)
 	
+	#gender
 	info.addSeparator()
-	#gender = info.addLabelItem("gender", viz.addDropList())
-	#age.addItems(['male','female','other','prefer not to say'])
-	
 	female = info.addLabelItem('female', viz.addRadioButton('gender'))
 	male = info.addLabelItem('male', viz.addRadioButton('gender'))
 	other = info.addLabelItem('other', viz.addRadioButton('gender'))
 	none = info.addLabelItem('prefer not to say', viz.addRadioButton('gender'))
 	
+	#vision
+	info.addSeparator()
+	noneLenses = info.addLabelItem('none', viz.addRadioButton('glasses'))
+	glasses = info.addLabelItem('glasses', viz.addRadioButton('glasses'))
+	correctiveLenses = info.addLabelItem('corrective lenses', viz.addRadioButton('glasses'))
+	
+	#submit button
 	info.addSeparator()
 	submitButton = info.addItem(viz.addButtonLabel('Submit'),align=viz.ALIGN_RIGHT_CENTER)
-
 	yield viztask.waitButtonUp(submitButton)
 	
 	handedData = ''
@@ -443,14 +457,24 @@ def participantInfo():
 	elif other.get() == viz.DOWN:
 		genderData = 'other'
 	else:
-		genderData = 'no answer'
+		genderData = 'noAnswer'
+	visionData = ''
+	if noneLenses.get() == viz.DOWN:
+		visionData = 'none'
+	elif glasses.get() == viz.DOWN:
+		visionData = 'glasses'
+	else:
+		visionData = 'correctiveLenses'
 	
-	data = [handedData, ageData + 18, genderData]
+	data = [handedData, ageData + 18, genderData, visionData]
 	
 	info.remove()
-
 	viztask.returnValue(data)
-	
+
+"""
+creates variables for headset, controller.
+links these to the main view.
+"""
 def vrSetup():
 	#headset
 	hmd = steamvr.HMD()
@@ -592,10 +616,10 @@ def writeOut():
 	filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
-			outfile.write("ID,age,gender,hand,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
+			outfile.write("ID,age,gender,hand,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
