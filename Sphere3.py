@@ -12,7 +12,7 @@ import math
 from statistics import mean
 import os
 
-
+https://elvers.us/perception/visualAngle/va.html
 
 ##### GLOBALS #####
 ###################
@@ -59,6 +59,7 @@ trialProbeResponse = [] # holds the data of participant probe sphere responses f
 data = [] # holds participant data collected at end in info panel
 
 #texture mapping for spheres and probe
+texture = False #apply texture to spheres and probe
 grid = viz.addTexture('VRStuff\grid.jpg') #importing the texture file
 grid.wrap(viz.WRAP_T, viz.REPEAT) #next two make it so texture repeats, size of texture stays the same while size of object changes
 grid.wrap(viz.WRAP_S, viz.REPEAT)
@@ -66,7 +67,6 @@ matrix = vizmat.Transform() #adjusted when spheres are made, makes it so texture
 
 ##### METHODS #####
 ###################
-
 
 '''
 Creates the '+' fixation point. Set to show at 'distance2' for all trials to create depth. 
@@ -142,9 +142,10 @@ def addSpheres(spheres):
 		rad = s[3] * (s[2] / distance2) # radius adjusted for distance, also used to scale matrix for texturing
 		sphereAdd = vizshape.addSphere(rad)
 		sphereAdd.lighting = True
-		matrix.setScale([rad, rad, rad])
-		sphereAdd.texmat( matrix )
-		sphereAdd.texture(grid)
+		if texture:
+			matrix.setScale([rad, rad, rad])
+			sphereAdd.texmat( matrix )
+			sphereAdd.texture(grid)
 		sphereAdd.setPosition(s[0], s[1], s[2])
 		spheresOut.append(sphereAdd)
 
@@ -189,14 +190,16 @@ def response(dist):
 			
 		if controller.getThumbstick()[1] < -0.1:
 			decrease_scale(spheresOut[0])
-			matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
-			probe.texmat( matrix )
-			probe.texture(grid)
+			if texture:
+				matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
+				probe.texmat( matrix )
+				probe.texture(grid)
 		elif controller.getThumbstick()[1] > 0.1:
 			increase_scale(spheresOut[0])
-			matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
-			probe.texmat( matrix )
-			probe.texture(grid)
+			if texture:
+				matrix.setScale([probeRadius * scale_factor, probeRadius * scale_factor, probeRadius * scale_factor])
+				probe.texmat( matrix )
+				probe.texture(grid)
 		else:
 			pass
 
@@ -210,9 +213,10 @@ def response(dist):
 	# Probe created and output to environment
 	probeRadius = random.uniform(probeRadLow, probeRadHigh)
 	probe = vizshape.addSphere(probeRadius)
-	matrix.setScale([probeRadius, probeRadius, probeRadius])
-	probe.texmat( matrix )
-	probe.texture(grid)
+	if texture == True:
+		matrix.setScale([probeRadius, probeRadius, probeRadius])
+		probe.texmat( matrix )
+		probe.texture(grid)
 	probe.setPosition(0, participantHeight, distance2)
 	spheresOut.append(probe)
 	
@@ -335,7 +339,7 @@ Press the trigger button when you are in position and ready to continue"""
 	
 	instructions = """You will now begin with practice trials.
 The instructor can provide guidance on
-these practice trials trials. You will be notified again
+these practice trials. You will be notified again
 when the experimental trials begin.
 
 Press the trigger button when you are ready to start"""
@@ -356,15 +360,17 @@ Press the trigger button when you are ready to start"""
 	
 	#set lighting for experiment
 	headLight = viz.MainView.getHeadLight()
-	#headLight.disable()
-	#light = viz.addLight()
-	#light.enable()
-	#light.direction(0,0,1)
-	#light.position(0,participantHeight,0)
-	#light.spread(180)
-	#light.intensity(1.5)
+	headLight.disable()
+	light = viz.addLight()
+	light.enable()
+	light.direction(0,0,1)
+	light.position(0,participantHeight,0)
+	light.spread(180)
+	light.intensity(1.5)
 	
-	floor = vizshape.addPlane(size=(50.0,50.0),axis=vizshape.AXIS_Y,cullFace=True, lighting=True, pos=(0,-2.5,0))
+	#setting the environment for trials such as floor, wall, etc if wanted
+	floorGrid = vizshape.addGrid(size=(40, 40), axis=vizshape.AXIS_Y, pos=(0,-2.5,0))
+	#floor = vizshape.addPlane(size=(2.0,2.0),axis=vizshape.AXIS_Y,cullFace=True, lighting=True, pos=(0,0,0))
 	#wall = vizshape.addPlane(size=(50,50),axis=vizshape.AXIS_Z,cullFace=True, lighting=True, pos=(0,0,20), flipFaces=True)
 	
 	learningList = []
