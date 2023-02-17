@@ -12,7 +12,7 @@ import math
 from statistics import mean
 import os
 
-https://elvers.us/perception/visualAngle/va.html
+#https://elvers.us/perception/visualAngle/va.html
 
 ##### GLOBALS #####
 ###################
@@ -21,12 +21,15 @@ participantHeight = 0 #recorded during learning phase
 
 # These adjust the number of trials of each distannce, and how far the spheres are shown on the z axis from zero
 learningCount = 1 # How many trials for each distance in learning phase
+depthLearningCount = 1 # How many trials in depth learning phase
+depthCount = 1 # How many trials in depth phase
 count = 2 # How many trials for each distance in experimental phase
 distance1 = 6 # Distance from zero of foreground trials
 distance2 = 12 # Distance from zero of Middle trials
 distance3 = 18 # Distance from zero of Background trials
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
+radiusDistanceScaling = False #circumference will look the same for all distances compared to distance2 if true, if false circumference will expand with distance
 cirlceRadius = 2 # Radius of circumference
 circleCenterX = 0 # where the center of the circumference will be placed on the x axis
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
@@ -37,6 +40,7 @@ fixationShowPause = 0.5 #time the fixation point is on screen before spheres sho
 betweenTrialPause = 0 #time between submission of probe sphere and next trial start
 
 # Radius values for spheres
+distanceScaling = False #have scaling radii based on distance from distance2
 rLow = 0.2 # Lowest radius a sphere can randomly be given
 rHigh = 0.4 # Highest radius a sphere can randomly be given
 rAvgLow = 0.25 # minimum average radius for spheres in each trial, if below this value sphere values for trial will be deleted and new values will be generated
@@ -96,13 +100,19 @@ def makeSpheres(count, distance, rL, rH, slist):
 	finds the x value within the imaginary circumference to place the sphere at. 
 	'''
 	def getX(angle, distance):
-		return circleCenterX + ((cirlceRadius * distance) * math.cos(angle))
+		if radiusDistanceScaling:
+			return circleCenterX + ((cirlceRadius * distance) * math.cos(angle))
+		else:
+			return circleCenterX + ((cirlceRadius) * math.cos(angle))
 
 	'''
 	finds the y value within the imaginary circumferecne to place the sphere at. 
 	'''
 	def getY(angle, distance):
-		return participantHeight + ((cirlceRadius * distance) * math.sin(angle))
+		if radiusDistanceScaling:
+			return participantHeight + ((cirlceRadius * distance) * math.sin(angle))
+		else:
+			return participantHeight + ((cirlceRadius) * math.sin(angle))
 
 	global sphereList
 	placementAngle = [0, 45, 90, 135, 180, 225, 270, 315]
@@ -117,12 +127,14 @@ def makeSpheres(count, distance, rL, rH, slist):
 			angle = random.randint(i - jitter, i + jitter)
 			radius = random.uniform(rL, rH)
 			
-			spheres.append([
-			getX(math.radians(angle), distance / distance2),
-			getY(math.radians(angle), distance / distance2), 
-			distance,
-			radius
-			]) 
+			if radiusDistanceScaling:
+				x = getX(math.radians(angle), distance / distance2)
+				y = getY(math.radians(angle), distance / distance2)
+			else:
+				x = getX(math.radians(angle), distance)
+				y = getY(math.radians(angle), distance)
+				
+			spheres.append([x, y, distance, radius]) 
 			meanRadius.append(radius)
 		
 		if rAvgHigh > mean(meanRadius) > rAvgLow:
@@ -139,7 +151,11 @@ def addSpheres(spheres):
 	global matrix
 	
 	for s in spheres:
-		rad = s[3] * (s[2] / distance2) # radius adjusted for distance, also used to scale matrix for texturing
+		
+		if distanceScaling:
+			rad = s[3] * (s[2] / distance2) # radius adjusted for distance, also used to scale matrix for texturing
+		else:
+			rad = s[3]
 		sphereAdd = vizshape.addSphere(rad)
 		sphereAdd.lighting = True
 		if texture:
@@ -238,7 +254,7 @@ def response(dist):
 		noResponse = 1
 	
 	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
-	
+		
 '''
 participant gets introduction to thier task
 participant orientationa and height set, and height is recorded
@@ -246,6 +262,108 @@ lighting and floor output to environment (?)
 learning trials occur
 '''
 def learningPhase():
+	
+	def depthTestPhase():
+		
+		def depthResponse(text):
+			
+			def onKeyDown(text):
+				global participantHeight
+				if controller.getThumbstick()[0] > 0.5 or controller.getThumbstick()[0] < -0.5:
+					text.message('same')
+				elif controller.getThumbstick()[1] < -0.5:
+					text.message('infront')
+				elif controller.getThumbstick()[1] > 0.5:
+					text.message('behind')
+				else:
+					pass
+					
+			# Allows participant input during this time until 'endResponseInput' is input.
+			responseUpdater = vizact.onupdate(0, onKeyDown(text))
+			responded = viztask.waitSensorDown(controller, endResponseInput)
+			waitTime = viztask.waitTime(timeToScale)
+			
+			#waits until participant responds or time limit is reached, then stops participant input
+			time = yield viztask.waitAny([waitTime,responded])
+			responseUpdater.setEnabled(viz.OFF)
+			
+			
+			viztask.returnValue(1)
+		
+		depthLearningList = []
+		makeSpheres(depthLearningCount, distance1, rLow, rHigh, depthLearningList)
+		makeSpheres(depthLearningCount, distance2, rLow, rHigh, depthLearningList)
+		makeSpheres(depthLearningCount, distance3, rLow, rHigh, depthLearningList)
+		random.shuffle(depthLearningList)
+		
+		depthList = []
+		makeSpheres(depthCount, distance1, rLow, rHigh, depthList)
+		makeSpheres(depthCount, distance2, rLow, rHigh, depthList)
+		makeSpheres(depthCount, distance3, rLow, rHigh, depthList)
+		random.shuffle(depthList)
+	
+		texts = addPanel("""During this Phase, you will
+attempt to judge the distance of objects.
+You will be shown a fixation point, and
+then 8 spheres will appear in a circle.
+Once the spheres disappear, you will determine if the
+spheres were infront, in-line, or behind the fixation point
+by pressing down, to either size, or up on the thumbstick respectivly.
+
+Press the trigger button when you are ready to continue""",
+		'participant is reading depth test tutorial')
+		yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+		texts[0].remove()
+		texts[1].remove()
+	
+		yield viztask.waitTime(0.5)
+		
+		texts = addPanel("""You will now begin with practice trials.
+The instructor can provide guidance on
+these practice trials. You will be notified again
+when the experimental trials begin.
+
+Press the trigger button when you are ready to start""",
+		'participant is starting depth test learning')
+		yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+		texts[0].remove()
+		texts[1].remove()
+		
+		yield viztask.waitTime(0.5)
+		
+		for i in range(len(depthLearningList)): # runs through all trials stored in 'sphereList'
+			print(depthLearningList[i][0][2])
+			yield showFixationPoint() #shows fixation cross
+			yield viztask.waitTime(fixationShowPause) #pause
+			yield addSpheres(depthLearningList[i]) #shows trial spheres
+			yield viztask.waitTime(trialShowPause) #pause
+			yield removeSpheres() #removes cross and spheres
+			text = viz.addText('')
+			text.setPosition([0, participantHeight, distance2])
+			text.setScale([0.4,0.4,0.4])
+			yield depthResponse() #response portion of trial is performed, returned values not recorded
+			text.remove()
+		
+		
+		
+
+	
+	def addPanel(instructions, instructorMessage):
+		panel = viz.addText(instructions)
+		panel.alignment(viz.ALIGN_LEFT_CENTER)
+		panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+		panel.resolution(1)
+		panel.disable(viz.LIGHTING)
+		panel.font('Arial')
+		panel.fontSize(4)
+		textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+		textLink.setOffset([-50,0,100])
+		#instructor sees info
+		info = vizinfo.InfoPanel(instructorMessage)
+		info.visible(viz.ON)
+		return [panel, info]
+
+		
 	
 	# addRayPrimitive from @ischtz on github
 	def addRayPrimitive(origin, direction, length=100, color=viz.RED, alpha=0.6, linewidth=3, parent=None):
@@ -274,8 +392,31 @@ def learningPhase():
 			ray.setParent(parent)
 		return ray
 	
-	#participant sees instructions
-	instructions = """Your task is to estimate the average size of spheres. 
+	texts = addPanel("""Please line yourself with your head directly over 
+the blue line below, and make yourself comfortable
+in your chair. The position you are in now will have
+to be held throughout the experiment, so that your
+height and orientation remains constant. Please stay in 
+this position until the experiment is over.
+
+Press the trigger button when you are in position and ready to continue""",
+	"Participant is about to take height.")
+	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
+	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+	texts[0].remove()
+	texts[1].remove()
+	removeSpheres() 
+	
+	#taking participant height
+	global participantHeight
+	participantHeight = viz.MainView.getPosition()[1]
+	
+	yield viztask.waitTime(0.5)
+	
+	yield depthTestPhase()
+	yield viztask.waitTime(0.5)
+	
+	texts = addPanel("""Your task is to estimate the average size of spheres. 
 You will be shown a fixation point, which you must focus on.
 Spheres will appear around the fixation point, but please stay focused 
 on the fixation point. After a short time, the spheres will
@@ -284,79 +425,26 @@ you can press down to make the sphere smaller, and up
 to make it larger. To the best of your ability, make the size
 of this sphere match the average size of the previous spheres.
 
-Press the trigger button when you are ready to continue"""
-	panel = viz.addText(instructions)
-	panel.alignment(viz.ALIGN_LEFT_CENTER)
-	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
-	panel.resolution(1)
-	panel.disable(viz.LIGHTING)
-	panel.font('Arial')
-	panel.fontSize(4)
-	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
-	textLink.setOffset([-50,0,100])
-	#instructor sees info
-	info = vizinfo.InfoPanel("Participant is reading tutorial.")
-	info.visible(viz.ON)
+Press the trigger button when you are ready to continue""", 
+	"Participant is reading tutorial.")
+	
 	#wait for conformation and removes info panels
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
-	info.remove()
-	panel.remove()
+	texts[0].remove()
+	texts[1].remove()
 	
 	yield viztask.waitTime(0.5) #test timing, mainly so no accidental skip of next instruction panel
-	
-	instructions = """Please line yourself with your head directly over 
-the blue line below, and make yourself comfortable
-in your chair. The position you are in now will have
-to be held throughout the experiment, so that your
-height and orientation remains constant. Please stay in 
-this position until the experiment is over.
 
-Press the trigger button when you are in position and ready to continue"""
-	panel = viz.addText(instructions)
-	panel.alignment(viz.ALIGN_LEFT_CENTER)
-	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
-	panel.resolution(1)
-	panel.disable(viz.LIGHTING)
-	panel.font('Arial')
-	panel.fontSize(4)
-	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
-	textLink.setOffset([-50,0,100])
-	
-	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
-	
-	info = vizinfo.InfoPanel("Participant is about to take height.")
-	info.visible(viz.ON)
-	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
-	info.remove()
-	panel.remove()
-	removeSpheres() #removes alignment ray
-	
-	#taking participant height
-	global participantHeight
-	participantHeight = viz.MainView.getPosition()[1]
-	
-	yield viztask.waitTime(0.5)
-	
-	instructions = """You will now begin with practice trials.
+	texts = addPanel("""You will now begin with practice trials.
 The instructor can provide guidance on
 these practice trials. You will be notified again
 when the experimental trials begin.
 
-Press the trigger button when you are ready to start"""
-	panel = viz.addText(instructions)
-	panel.alignment(viz.ALIGN_LEFT_CENTER)
-	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
-	panel.resolution(1)
-	panel.disable(viz.LIGHTING)
-	panel.font('Arial')
-	panel.fontSize(4)
-	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
-	textLink.setOffset([-50,0,100])
-	info = vizinfo.InfoPanel("Participant is begining practice trials.")
-	info.visible(viz.ON)
+Press the trigger button when you are ready to start""",
+	"Participant is begining practice trials.")
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
-	info.remove()
-	panel.remove()
+	texts[0].remove()
+	texts[1].remove()
 	
 	#set lighting for experiment
 	headLight = viz.MainView.getHeadLight()
@@ -438,6 +526,10 @@ def participantInfo():
 	other = info.addLabelItem('other', viz.addRadioButton('gender'))
 	none = info.addLabelItem('prefer not to say', viz.addRadioButton('gender'))
 	
+	#ipd
+	info.addSeparator()
+	ipd = info.addLabelItem('Interpupulary Distance',viz.addTextbox())
+	
 	#vision
 	info.addSeparator()
 	noneLenses = info.addLabelItem('none', viz.addRadioButton('glasses'))
@@ -454,7 +546,9 @@ def participantInfo():
 		handedData = 'right'
 	else:
 		handedData = 'left'
+		
 	ageData = age.getSelection()
+	
 	genderData = ''
 	if female.get() == viz.DOWN:
 		genderData = 'female'
@@ -464,6 +558,9 @@ def participantInfo():
 		genderData = 'other'
 	else:
 		genderData = 'noAnswer'
+		
+	ipdData = ipd.get()
+		
 	visionData = ''
 	if noneLenses.get() == viz.DOWN:
 		visionData = 'none'
@@ -472,7 +569,8 @@ def participantInfo():
 	else:
 		visionData = 'correctiveLenses'
 	
-	data = [handedData, ageData + 18, genderData, visionData]
+	data = [handedData, ageData + 18, genderData, visionData, ipdData]
+	print(ipdData)
 	
 	info.remove()
 	viztask.returnValue(data)
@@ -622,10 +720,10 @@ def writeOut():
 	filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
-			outfile.write("ID,age,gender,hand,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
+			outfile.write("ID,age,gender,hand,ipd,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
