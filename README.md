@@ -7,8 +7,8 @@ testing rapid estimation of an ensemble average size with varying distance withi
 - run the Experiment.py file within the repo
 
 ## Information
-- 'ParticipantData': file where each participant's data is stored in csv format
-- 'textures': stores jpg files for use within the experiment as textures if setting is turen on
-- 'currentParticipant': stores the number of the next participant, used to automatically write file names within 'ParticipantData'. If you run this experiment again, make sure to check that this value is reset to 1 before the first participant.
-- 'Experiment.py': where the experiment is run from. You must have the vizard 7 software downloaded to run the file.
-- 'analysis.rmd': where the data analysis occurs on the data within 'ParticipantData'
+- `ParticipantData`: file where each participant's data is stored in csv format
+- `textures`: stores jpg files for use within the experiment as textures if setting is turen on
+- `currentParticipant`: stores the number of the next participant, used to automatically write file names within 'ParticipantData'. If you run this experiment again, make sure to check that this value is reset to 1 before the first participant.
+- `Experiment.py`: where the experiment is run from. You must have the vizard 7 software downloaded to run the file.
+- `analysis.rmd`: where the data analysis occurs on the data within 'ParticipantData'
