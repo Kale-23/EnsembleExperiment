@@ -69,6 +69,8 @@ grid.wrap(viz.WRAP_T, viz.REPEAT) #next two make it so texture repeats, size of 
 grid.wrap(viz.WRAP_S, viz.REPEAT)
 matrix = vizmat.Transform() #adjusted when spheres are made, makes it so texture maps correctly onto objects
 
+thumbstick = False # oculus uses getTrackpad() instead
+
 ##### METHODS #####
 ###################
 
@@ -255,6 +257,58 @@ def response(dist):
 	
 	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
 		
+		
+def depthResponse():
+	global text
+	
+	def wordUpdate():
+		global participantHeight
+		global thumbstick
+
+		if thumbstick:
+			if controller.getThumbstick()[0] > 0.5 or controller.getThumbstick()[0] < -0.5:
+				text.message('same')
+			elif controller.getThumbstick()[1] < -0.5:
+				text.message('infront')
+			elif controller.getThumbstick()[1] > 0.5:
+				text.message('behind')
+			else:
+				pass
+		else:
+			if controller.getTrackpad()[0] > 0.5 or controller.getTrackpad()[0] < -0.5:
+				text.message('same')
+			elif controller.getTrackpad()[1] < -0.5:
+				text.message('infront')
+			elif controller.getTrackpad()[1] > 0.5:
+				text.message('behind')
+			else:
+				pass
+	
+	text = viz.addText('', pos=[0, participantHeight, distance2])
+	text.setScale([0.4,0.4,0.4])
+			
+	# Allows participant input during this time until 'endResponseInput' is input.
+	wordUpdater = vizact.onupdate(0, wordUpdate)
+	responded = viztask.waitSensorDown(controller, endResponseInput)
+	waitTime = viztask.waitTime(timeToScale)
+
+	#waits until participant responds or time limit is reached, then stops participant input
+	time = yield viztask.waitAny([waitTime,responded])
+	wordUpdater.setEnabled(viz.OFF)
+	
+	ret = ''
+	if text.getMessage() == 'same':
+		ret = 'same'
+	elif text.getMessage() == 'infront':
+		ret = 'infront'
+	elif text.getMessage() == 'behind':
+		ret = 'behind'
+	else:
+		ret = 'no answer'
+	
+	text.remove()
+
+	viztask.returnValue(ret)
 '''
 participant gets introduction to thier task
 participant orientationa and height set, and height is recorded
@@ -265,30 +319,7 @@ def learningPhase():
 	
 	def depthTestPhase():
 		
-		def depthResponse(text):
-			
-			def onKeyDown(text):
-				global participantHeight
-				if controller.getThumbstick()[0] > 0.5 or controller.getThumbstick()[0] < -0.5:
-					text.message('same')
-				elif controller.getThumbstick()[1] < -0.5:
-					text.message('infront')
-				elif controller.getThumbstick()[1] > 0.5:
-					text.message('behind')
-				else:
-					pass
-					
-			# Allows participant input during this time until 'endResponseInput' is input.
-			responseUpdater = vizact.onupdate(0, onKeyDown(text))
-			responded = viztask.waitSensorDown(controller, endResponseInput)
-			waitTime = viztask.waitTime(timeToScale)
-			
-			#waits until participant responds or time limit is reached, then stops participant input
-			time = yield viztask.waitAny([waitTime,responded])
-			responseUpdater.setEnabled(viz.OFF)
-			
-			
-			viztask.returnValue(1)
+		
 		
 		depthLearningList = []
 		makeSpheres(depthLearningCount, distance1, rLow, rHigh, depthLearningList)
@@ -338,11 +369,9 @@ Press the trigger button when you are ready to start""",
 			yield addSpheres(depthLearningList[i]) #shows trial spheres
 			yield viztask.waitTime(trialShowPause) #pause
 			yield removeSpheres() #removes cross and spheres
-			text = viz.addText('')
-			text.setPosition([0, participantHeight, distance2])
-			text.setScale([0.4,0.4,0.4])
-			yield depthResponse() #response portion of trial is performed, returned values not recorded
-			text.remove()
+
+			response = yield depthResponse() #response portion of trial is performed, returned values not recorded
+			print(response)
 		
 		
 		
