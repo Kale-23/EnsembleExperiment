@@ -53,7 +53,7 @@ probeRadLow = 0.10470 # Lowest radius the probe can randomly be given
 probeRadHigh = 0.52370 # Highest radius the probe can randomly be given
 scale_factor = 1 # factor by which the radius of the probe will be scaled by when shown.(starts at 1)
 #valueToScaleByAddSubtract = 0.0524 # value by which the scale factor of the probe is increased/decreased during response
-valueToScaleBy = 1.05 # scale factor multiplied/ divided by this value when participant provides imput during response
+valueToScaleBy = 1.005 # scale factor multiplied/ divided by this value when participant provides imput during response
 
 # response parameters
 depthPassPercentage = 0.8 #percentage participant has to get to pass the depth test
@@ -277,29 +277,30 @@ def response(dist):
 	
 	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
 		
-		
+
+def addPanel(instructions, instructorMessage):
+	'''
+	creates text panel for showing instructions to participant
+	'''
+	
+	panel = viz.addText(instructions)
+	panel.alignment(viz.ALIGN_LEFT_CENTER)
+	panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
+	panel.resolution(1)
+	panel.disable(viz.LIGHTING)
+	panel.font('Arial')
+	panel.fontSize(4)
+	textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
+	textLink.setOffset([-50,0,100])
+	#instructor sees info
+	info = vizinfo.InfoPanel(instructorMessage)
+	info.visible(viz.ON)
+	return [panel, info]	
 
 
 def learningPhase():
 	
-	def addPanel(instructions, instructorMessage):
-		'''
-		creates text panel for showing instructions to participant
-		'''
-		
-		panel = viz.addText(instructions)
-		panel.alignment(viz.ALIGN_LEFT_CENTER)
-		panel.setBackdrop(viz.BACKDROP_RIGHT_BOTTOM)
-		panel.resolution(1)
-		panel.disable(viz.LIGHTING)
-		panel.font('Arial')
-		panel.fontSize(4)
-		textLink = viz.link(viz.MainView,panel,mask=viz.LINK_POS)
-		textLink.setOffset([-50,0,100])
-		#instructor sees info
-		info = vizinfo.InfoPanel(instructorMessage)
-		info.visible(viz.ON)
-		return [panel, info]
+
 
 		
 	
@@ -736,7 +737,21 @@ def experiment():
 	random.shuffle(sphereList)
 
 	#testing phase, runs through all trials
+	sameResponse = 0
 	for i in range(len(sphereList)): # runs through all trials stored in 'sphereList'
+		if sameResponse > 3:
+			texts = addPanel("""You have not adjusted the response sphere 3
+or more trials in a row.
+If you are having trouble, please ask the instructor
+for help, otherwise make sure to adjust the sphere
+to the best of your ability.
+
+Press the trigger button when you are ready to resume""",
+			'participant has not adjusted the probe sphere')
+			yield viztask.waitTime(5)
+			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+			texts[0].remove()
+			texts[1].remove()
 		print(sphereList[i][0][2])
 		yield showFixationPoint() #shows fixation cross
 		yield viztask.waitTime(fixationShowPause) #pause
@@ -746,6 +761,13 @@ def experiment():
 		
 		startTime = viz.tick() #starts timing response time
 		probe = yield response(sphereList[i][0][2]) #response portion of trial is performed
+		
+		#checks to see if participant changed the probe sphere or is just rushing through
+		if probe[1] == 1:
+			sameResponse += 1
+		else:
+			sameResponse = 0
+			
 		responseTime = viz.tick() - startTime #response time is recorded
 		resp = [probe, responseTime]
 		trialProbeResponse.append(resp)
