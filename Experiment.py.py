@@ -26,13 +26,13 @@ learningCount = 5 # learning phase
 count = 50 # experimental phase
 
 # trial's distance from participant
-distance1 = 6 # foreground
-distance2 = 12 # middleground (same as fixation point)
-distance3 = 18 # background
+distance1 = 3 # foreground
+distance2 = 4 # middleground (same as fixation point)
+distance3 = 5 # background
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
-radiusDistanceScaling = False #circumference will look the same for all distances compared to distance2 if true, if false circumference will expand with distance
-cirlceRadius = 1.5084 # Radius of circumference
+radiusDistanceScaling = True #circumference will look the same for all distances compared to distance2 if true, if false circumference will expand with distance
+cirlceRadius = 0.75 # Radius of circumference
 circleCenterX = 0 # where the center of the circumference will be placed on the x axis (not used in this but could be implemented)
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
 
@@ -43,14 +43,20 @@ betweenTrialPause = 0 #time between submission of probe sphere and next trial st
 
 # Radius values for spheres
 distanceScaling = False #have scaling radii based on distance from distance2
-rLow = 0.1528 # Lowest radius a sphere can randomly be given
-rHigh = 0.42730 # Highest radius a sphere can randomly be given
-rAvgLow = 0.2304 # minimum average radius for spheres in each trial, if below this value sphere values for trial will be deleted and new values will be generated
-rAvgHigh = 0.3370 # maximum average radius for spheres in each trial, if above this value, sphere values for trial will be deleted ad ew values will be generated
+#rLow = 0.1528 # Lowest radius a sphere can randomly be given
+rLow = 0.076
+#rHigh = 0.42730 # Highest radius a sphere can randomly be given
+rHigh = 0.175
+#rAvgLow = 0.2304 # minimum average radius for spheres in each trial, if below this value sphere values for trial will be deleted and new values will be generated
+rAvgLow = 0.115
+#rAvgHigh = 0.3370 # maximum average radius for spheres in each trial, if above this value, sphere values for trial will be deleted ad ew values will be generated
+rAvgHigh = 0.14
 
 # probe parameters
-probeRadLow = 0.10470 # Lowest radius the probe can randomly be given
-probeRadHigh = 0.52370 # Highest radius the probe can randomly be given
+#probeRadLow = 0.10470 # Lowest radius the probe can randomly be given
+probeRadLow = 0.0502
+#probeRadHigh = 0.52370 # Highest radius the probe can randomly be given
+probeRadHigh = 0.251
 scale_factor = 1 # factor by which the radius of the probe will be scaled by when shown.(starts at 1)
 #valueToScaleByAddSubtract = 0.0524 # value by which the scale factor of the probe is increased/decreased during response
 valueToScaleBy = 1.005 # scale factor multiplied/ divided by this value when participant provides imput during response
@@ -87,8 +93,8 @@ def showFixationPoint():
 	global spheresOut
 	global distance2
 	
-	box1 = vizshape.addBox(size=(0.1, 0.1, 0.1), color = viz.WHITE)
-	box2 = vizshape.addBox(size=(0.1, 0.1, 0.1), color = viz.WHITE)
+	box1 = vizshape.addBox(size=(0.03, 0.03, 0.03), color = viz.WHITE)
+	box2 = vizshape.addBox(size=(0.03, 0.03, 0.03), color = viz.WHITE)
 	box1.setPosition(0,participantHeight,distance2)
 	#box1.setScale([dist / distance2, dist / distance2, dist / distance2])
 	box2.setPosition(0,participantHeight,distance2)
@@ -300,10 +306,6 @@ def addPanel(instructions, instructorMessage):
 
 def learningPhase():
 	
-
-
-		
-	
 	# addRayPrimitive from @ischtz on github
 	def addRayPrimitive(origin, direction, length=100, color=viz.RED, alpha=0.6, linewidth=3, parent=None):
 		""" Create a Vizard ray primitive from two vertices. Can be used
@@ -436,6 +438,8 @@ Press the trigger button when you are ready to start""",
 		
 		yield viztask.waitTime(0.5)
 		
+		floorGrid1 = vizshape.addGrid(size=(20, 20), axis=vizshape.AXIS_Y, pos=(0,-2.5,0))
+		
 		for i in range(len(depthLearningList)): # runs through all trials stored in 'sphereList'
 			dis = depthLearningList[i][0][2]
 			print(dis)
@@ -479,6 +483,7 @@ now begin with the second part of the experiment.
 
 Press the trigger button when you are ready to continue""",
 			'participant passes depth test')
+			floorGrid1.remove()
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 			texts[0].remove()
 			texts[1].remove()
