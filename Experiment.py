@@ -32,7 +32,7 @@ distance3 = 6 # background
 
 # These adjust the parameters for the imaginary circumferencne the spheres are placed on
 radiusDistanceScaling = True #circumference will look the same for all distances compared to distance2 if true, if false circumference will expand with distance
-cirlceRadius = 0.75 # Radius of circumference
+cirlceRadius = 0.9 # Radius of circumference
 circleCenterX = 0 # where the center of the circumference will be placed on the x axis (not used in this but could be implemented)
 jitter = 5 # degrees the spheres can jitter from thier placement angle (ie with jitter = 5, the sphere at 0 degrees will be randomly placed between 355 degrees and 5 degrees)
 
@@ -65,7 +65,7 @@ valueToScaleBy = 1.005 # scale factor multiplied/ divided by this value when par
 depthPassPercentage = 0.8 #percentage participant has to get to pass the depth test
 endResponseInput = steamvr.BUTTON_TRIGGER # participant input that confirms their probe size and ends response portion of trial.
 timeToScale = 60 # max time participant has to scale probe sphere and submit answer.
-thumbstick = False # oculus uses getTrackpad() instead
+thumbstick = True # oculus uses getTrackpad() instead
 
 # global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
@@ -264,6 +264,10 @@ def response(dist):
 	probe.setPosition(0, participantHeight, distance2)
 	spheresOut.append(probe)
 	
+	
+	startTime = viz.tick() #starts timing response time
+
+	
 	# Set the initial scaling factor for the probe in this trial
 	scale_factor = 1.0
 
@@ -274,6 +278,8 @@ def response(dist):
 	
 	#waits until participant responds or time limit is reached, then stops participant input
 	time = yield viztask.waitAny([waitTime,responded])
+	
+	responseTime = viz.tick() - startTime #response time is recorded
 	responseUpdater.setEnabled(viz.OFF)
 	
 	#output of variables, determines if participant responded or not
@@ -281,7 +287,7 @@ def response(dist):
 	if time.condition == waitTime:
 		noResponse = 1
 	
-	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse])
+	viztask.returnValue([probeRadius, scale_factor, probeRadius * scale_factor, noResponse, responseTime])
 		
 
 def addPanel(instructions, instructorMessage):
@@ -782,9 +788,7 @@ Press the trigger button when you are ready to resume""",
 		yield viztask.waitTime(trialShowPause) #pause
 		yield removeSpheres() #removes cross and spheres
 		
-		startTime = viz.tick() #starts timing response time
 		probe = yield response(sphereList[i][0][2]) #response portion of trial is performed
-		responseTime = viz.tick() - startTime #response time is recorded
 		print("trial: " + str(i + 1) + "distance: " + str(sphereList[i][0][2]) + " response: " + str(probe[2]))
 		#checks to see if participant changed the probe sphere or is just rushing through
 		if probe[1] == 1:
@@ -792,8 +796,7 @@ Press the trigger button when you are ready to resume""",
 		else:
 			sameResponse = 0
 			
-		resp = [probe, responseTime]
-		trialProbeResponse.append(resp)
+		trialProbeResponse.append(probe)
 		yield removeSpheres() #removes probe sphere
 		
 	#lets the participant know the experiment is over
@@ -871,12 +874,10 @@ def writeOut():
 			outfile.write("ID,age,gender,hand,ipd,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][1], trialProbeResponse[i][0][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][0][4], trialProbeResponse[i][0][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
-
-
 
 ##### MAIN #####
 ################
