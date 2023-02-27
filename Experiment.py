@@ -17,11 +17,13 @@ import os
 ##### GLOBALS #####
 ###################
 
+testing = True #if true, outfile name is 'testing' rather than 'partipant'
+
 participantHeight = 0 #recorded during learning phase
 
 # Number of trials for each distance in each category
 depthLearningCount = 3 # depth learning phase
-depthCount = 10 # depth phase
+depthCount = 5 # depth phase
 learningCount = 3 # learning phase
 count = 50 # experimental phase
 
@@ -868,13 +870,17 @@ def writeOut():
 	if not os.path.exists(path):
 		os.makedirs(path)
 
-	filename = "Participant" + str(participantNumber) + ".csv"
+	if testing:
+		filename = "testing" + str(participantNumber) + ".csv"
+	else:
+		filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
 			outfile.write("ID,age,gender,hand,ipd,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0][0], trialProbeResponse[i][0][2], trialProbeResponse[i][0][1], trialProbeResponse[i][0][4], trialProbeResponse[i][0][3]))
+				print(trialProbeResponse[i])
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0], trialProbeResponse[i][2], trialProbeResponse[i][1], trialProbeResponse[i][4], trialProbeResponse[i][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
