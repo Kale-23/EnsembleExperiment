@@ -13,6 +13,7 @@ from statistics import mean
 import os
 
 #https://elvers.us/perception/visualAngle/va.html
+#add experimenter name field under info
 
 ##### GLOBALS #####
 ###################
@@ -21,11 +22,11 @@ testing = True #if true, outfile name is 'testing' rather than 'partipant'
 
 participantHeight = 0 #recorded during learning phase
 
-# Number of trials for each distance in each category
-depthLearningCount = 3 # depth learning phase
+# Number of trials for each distance in each category (Total = # * 3)
+depthLearningCount = 4 # depth learning phase
 depthCount = 5 # depth phase
-learningCount = 3 # learning phase
-count = 50 # experimental phase
+learningCount = 10 # learning phase
+count = 100 # experimental phase
 
 # trial's distance from participant
 distance1 = 3 # foreground
@@ -505,7 +506,10 @@ Press the trigger button when you are ready to continue""",
 please remove the headset and listen to the instructor
 for your next steps.""",
 			'participant passes depth test')
+			floorGrid1.remove()
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
+			texts[0].remove()
+			texts[1].remove()
 	
 	
 	
