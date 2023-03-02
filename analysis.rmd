@@ -1,0 +1,101 @@
+---
+title: "Ensemble Experiment Data Analysis"
+author: "Kaleb"
+date: "`r Sys.Date()`"
+output: 
+    pdf_document:
+indent: true
+header-includes:
+#- \usepackage{indentfirst} #indents first paragraph because indent = true doesnt
+- \usepackage{setspace}\doublespacing #double space to make reading easier
+- \usepackage{sectsty} \sectionfont{\centering} #center headers
+#- \usepackage{float}
+#- \floatplacement{figure}{H}
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.height = 3.75, fig.width = 5)
+#knitr::opts_chunk$set(comment = FALSE)
+require(tidyverse)
+require(knitr)
+require(kableExtra)
+require(papeR) # signif stars in kables
+require(broom) # doesnt give signif stars but papeR doesnt work for hsd
+require(lubridate)
+require(ggthemes)
+require(ggpubr)
+require(ggsignif) #signif between years on boxplot
+
+df <- read.csv(paste(getwd(), "/participantData/testing3.csv", sep = ""),
+    stringsAsFactors = TRUE)
+```
+
+```{r add bias and plane}
+
+df$bias <-  (df$probeAnswerRadius - df$sphereAverageRadius) / df$sphereAverageRadius
+df["plane"] <- ifelse(df["sphereDistance"] == 6, "far", ifelse(df["sphereDistance"] == 4.5, "middle", "close"))
+df$plane <- as.factor(df$plane)
+df$error <- df$probeAnswerRadius - df$sphereAverageRadius
+
+df_summary_bias <- df %>%
+    dplyr::group_by(plane) %>%
+    dplyr::summarise(mean = mean(bias),
+                    sd = sd(bias),
+                    n = length(bias),
+                    se = sd / sqrt(n),
+                    ci_high = mean + (0.95 * sd),
+                    ci_low = mean - (0.95 * sd))
+
+df_summary_error <- df %>%
+    dplyr::group_by(plane) %>%
+    dplyr::summarise(mean = mean(error),
+                    sd = sd(error),
+                    n = length(error),
+                    se = sd / sqrt(n),
+                    ci_high = mean + (0.95 * sd),
+                    ci_low = mean - (0.95 * sd))
+```
+```{r biasChart}
+
+bias_chart <- df_summary_bias %>%
+    ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = mean, color = plane)) +
+    labs(x = "plane", y = "bias") +
+    geom_point() +
+    geom_errorbar(aes(ymin = mean - (0.95 * sd), ymax = mean + (0.95 * sd))) +
+    geom_hline(yintercept = 0) +
+    geom_signif(comparisons = list(c("close", "middle")), map_signif_level = TRUE) +
+    geom_signif(comparisons = list(c("middle", "far")), map_signif_level = TRUE, margin_top = 0.1) +
+    geom_signif(comparisons = list(c("close", "far")), map_signif_level = TRUE, margin_top = 0.17)
+bias_chart
+```
+
+```{r bias over trials}
+
+bias_trials <- df %>%
+    ggplot(aes(x = trial, y = bias)) +
+    labs(x = "trial", y = "bias") +
+    geom_smooth()
+bias_trials
+```
+
+```{r errorChart}
+error_chart <- df_summary_error %>%
+    ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = mean, color = plane)) +
+    labs(x = "plane", y = "error") +
+    geom_point() +
+    geom_errorbar(aes(ymin = mean - (0.95 * sd), ymax = mean + (0.95 * sd))) +
+    geom_hline(yintercept = 0) +
+    geom_signif(comparisons = list(c("close", "middle")), map_signif_level = TRUE) +
+    geom_signif(comparisons = list(c("middle", "far")), map_signif_level = TRUE, margin_top = 0.1) +
+    geom_signif(comparisons = list(c("close", "far")), map_signif_level = TRUE, margin_top = 0.17)
+```
+
+```{r error over trials}
+error_trials <- df %>%
+    ggplot(aes(x = trial, y = error)) +
+    labs(x = "trial", y = "error") +
+    geom_smooth()
+```
