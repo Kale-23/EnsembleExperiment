@@ -23,10 +23,10 @@ testing = True #if true, outfile name is 'testing' rather than 'partipant'
 participantHeight = 0 #recorded during learning phase
 
 # Number of trials for each distance in each category (Total = # * 3)
-depthLearningCount = 4 # depth learning phase
-depthCount = 5 # depth phase
-learningCount = 10 # learning phase
-count = 100 # experimental phase
+depthLearningCount = 4 # depth learning phase #4 norm
+depthCount = 5 # depth phase #5 norm
+learningCount = 10 # learning phase #10 norm
+count = 100 # experimental phase #100 norm
 
 # trial's distance from participant
 distance1 = 3 # foreground
@@ -45,7 +45,7 @@ fixationShowPause = 0.5 #time the fixation point is on screen before spheres sho
 betweenTrialPause = 0 #time between submission of probe sphere and next trial start
 
 # Radius values for spheres
-distanceScaling = False #have scaling radii based on distance from distance2
+distanceScaling = True #have scaling radii based on distance from distance2
 #rLow = 0.1528 # Lowest radius a sphere can randomly be given
 rLow = 0.076
 #rHigh = 0.42730 # Highest radius a sphere can randomly be given
