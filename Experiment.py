@@ -342,7 +342,6 @@ def addRayPrimitive(origin, direction, length=100, color=viz.RED, alpha=0.6, lin
 
 def learningPhase():
 	
-
 	'''
 	participant gets introduction to thier task
 	participant orientationa and height set, and height is recorded
@@ -578,7 +577,7 @@ Press the trigger button when you are ready to start""",
 	light.intensity(1.5)
 	
 	#setting the environment for trials such as floor, wall, etc if wanted
-	floorGrid = vizshape.addGrid(size=(40, 40), axis=vizshape.AXIS_Y, pos=(0,-2.5,0))
+	floorGrid = vizshape.addGrid(size=(20, 20), axis=vizshape.AXIS_Y, pos=(0,-2.5,0))
 	#floor = vizshape.addPlane(size=(2.0,2.0),axis=vizshape.AXIS_Y,cullFace=True, lighting=True, pos=(0,0,0))
 	#wall = vizshape.addPlane(size=(50,50),axis=vizshape.AXIS_Z,cullFace=True, lighting=True, pos=(0,0,20), flipFaces=True)
 	
