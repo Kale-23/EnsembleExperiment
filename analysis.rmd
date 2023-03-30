@@ -3,7 +3,7 @@ title: "Ensemble Experiment Data Analysis"
 author: "Kaleb"
 date: "`r Sys.Date()`"
 output: 
-    pdf_document:
+    pdf_document
 indent: true
 header-includes:
 #- \usepackage{indentfirst} #indents first paragraph because indent = true doesnt
@@ -13,11 +13,9 @@ header-includes:
 #- \floatplacement{figure}{H}
 ---
 
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-knitr::opts_chunk$set(fig.height = 3.75, fig.width = 5)
+#knitr::opts_chunk$set(fig.height = 3.75, fig.width = 5)
 #knitr::opts_chunk$set(comment = FALSE)
 require(tidyverse)
 require(knitr)
@@ -29,9 +27,11 @@ require(ggthemes)
 require(ggpubr)
 require(ggsignif) #signif between years on boxplot
 
-df <- read.csv(paste(getwd(), "/participantData/testing3.csv", sep = ""),
+df <- read.csv(paste(getwd(), "/participantData/testing6.csv", sep = ""),
     stringsAsFactors = TRUE)
 ```
+
+# Sarah Data
 
 ```{r add bias and plane}
 
@@ -48,6 +48,7 @@ df_summary_bias <- df %>%
                     se = sd / sqrt(n),
                     ci_high = mean + (0.95 * sd),
                     ci_low = mean - (0.95 * sd))
+df_joined_bias <- left_join(df, df_summary_bias, by = "plane")
 
 df_summary_error <- df %>%
     dplyr::group_by(plane) %>%
@@ -57,45 +58,80 @@ df_summary_error <- df %>%
                     se = sd / sqrt(n),
                     ci_high = mean + (0.95 * sd),
                     ci_low = mean - (0.95 * sd))
+df_joined_error <- left_join(df, df_summary_error, by = "plane")
 ```
-```{r biasChart}
 
-bias_chart <- df_summary_bias %>%
+```{r bias/ error chart}
+
+bias_chart <- df_joined_bias %>%
     ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = mean, color = plane)) +
-    labs(x = "plane", y = "bias") +
+    labs(x = "plane", y = "bias", title = "Bias by Distance") +
     geom_point() +
+    geom_jitter(aes(x = factor(plane, level = c("close", "middle", "far")), y = bias, color = plane, alpha = 0.2), width = 0.15) +
+    geom_errorbar(aes(ymin = mean - (0.95 * sd), ymax = mean + (0.95 * sd))) +
+    geom_hline(yintercept = 0) +
+    geom_signif(comparisons = list(c("close", "middle")), map_signif_level = TRUE) +
+    geom_signif(comparisons = list(c("middle", "far")), map_signif_level = TRUE, margin_top = 0.1) +
+    geom_signif(comparisons = list(c("close", "far")), map_signif_level = TRUE, margin_top = 0.17) +
+    theme(legend.position = "none")
+
+error_chart <- df_joined_error %>%
+    ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = mean, color = plane)) +
+    labs(x = "plane", y = "error", title = "Error by Distance") +
+    geom_point() +
+    geom_jitter(aes(x = factor(plane, level = c("close", "middle", "far")), y = error, color = plane, alpha = 0.2), width = 0.15) +
     geom_errorbar(aes(ymin = mean - (0.95 * sd), ymax = mean + (0.95 * sd))) +
     geom_hline(yintercept = 0) +
     geom_signif(comparisons = list(c("close", "middle")), map_signif_level = TRUE) +
     geom_signif(comparisons = list(c("middle", "far")), map_signif_level = TRUE, margin_top = 0.1) +
     geom_signif(comparisons = list(c("close", "far")), map_signif_level = TRUE, margin_top = 0.17)
-bias_chart
+
+by_distance <- ggarrange(bias_chart, error_chart, labels = c("A", "B"), ncol = 2)
+by_distance
 ```
 
 ```{r bias over trials}
-
 bias_trials <- df %>%
-    ggplot(aes(x = trial, y = bias)) +
-    labs(x = "trial", y = "bias") +
-    geom_smooth()
-bias_trials
-```
+    ggplot(aes(x = trial, y = bias, color = plane)) +
+    labs(x = "trial", y = "bias", title = "Bias over Trials") +
+    geom_point(aes(alpha = 0.2, color = plane)) +
+    geom_smooth(method = "lm") +
+    theme(legend.position = "none")
 
-```{r errorChart}
-error_chart <- df_summary_error %>%
-    ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = mean, color = plane)) +
-    labs(x = "plane", y = "error") +
-    geom_point() +
-    geom_errorbar(aes(ymin = mean - (0.95 * sd), ymax = mean + (0.95 * sd))) +
-    geom_hline(yintercept = 0) +
-    geom_signif(comparisons = list(c("close", "middle")), map_signif_level = TRUE) +
-    geom_signif(comparisons = list(c("middle", "far")), map_signif_level = TRUE, margin_top = 0.1) +
-    geom_signif(comparisons = list(c("close", "far")), map_signif_level = TRUE, margin_top = 0.17)
-```
-
-```{r error over trials}
 error_trials <- df %>%
-    ggplot(aes(x = trial, y = error)) +
-    labs(x = "trial", y = "error") +
-    geom_smooth()
+    ggplot(aes(x = trial, y = error, color = plane)) +
+    labs(x = "trial", y = "error", title = "Error over Trials") +
+    geom_point(aes(alpha = 0.2)) +
+    geom_smooth(method = "lm")
+
+by_trial <- ggarrange(bias_trials, error_trials, labels = c("A", "B"), ncol = 2)
+by_trial
+```
+
+```{r average sphere size vs probe response}
+
+df_summary_size <- df %>%
+    dplyr::group_by(plane) %>%
+    dplyr::summarise(smean = mean(sphereAverageRadius),
+                    ssd = sd(sphereAverageRadius),
+                    sn = length(sphereAverageRadius),
+                    sse = ssd / sqrt(sn),
+                    sci_high = smean + (0.95 * ssd),
+                    sci_low = smean - (0.95 * ssd),
+                    pmean = mean(probeAnswerRadius),
+                    psd = sd(probeAnswerRadius),
+                    pn = length(probeAnswerRadius),
+                    pse = psd / sqrt(pn),
+                    pci_high = pmean + (0.95 * psd),
+                    pci_low = pmean - (0.95 * psd)
+                    )
+size_chart <- df_summary_size %>%
+    ggplot(aes(x = factor(plane, level = c("close", "middle", "far")), y = smean)) +
+        labs(x = "plane", y = "radius(m)", title = "Actual vs Estimated Average Sphere Size") +
+        geom_point(aes(color = "blue")) +
+        geom_point(aes(x = plane, y = pmean, color = "red")) +
+        geom_errorbar(aes(ymin = sci_low, ymax = sci_high, color = "blue")) +
+        geom_errorbar(aes(ymin = pci_low, ymax = pci_high, color = "red")) +
+        scale_color_discrete(labels = c("Average Radus", "Probe Radus"))
+size_chart
 ```

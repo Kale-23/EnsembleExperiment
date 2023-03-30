@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  27 FEB 2023 17:06
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  22 MAR 2023 13:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -548,30 +548,51 @@ LaTeX Font Info:    Trying to load font information for U+msb on input line 78.
 (/Users/kalebducharme/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-<analysis_files/figure-latex/biasChart-1.pdf, id=4, 361.35pt x 271.0125pt>
-File: analysis_files/figure-latex/biasChart-1.pdf Graphic file (type pdf)
-<use analysis_files/figure-latex/biasChart-1.pdf>
-Package pdftex.def Info: analysis_files/figure-latex/biasChart-1.pdf  used on input line 79.
-(pdftex.def)             Requested size: 361.34912pt x 271.01183pt.
+<analysis_files/figure-latex/bias/ error chart-1.pdf, id=8, 469.755pt x 325.215pt>
+File: analysis_files/figure-latex/bias/ error chart-1.pdf Graphic file (type pdf)
+<use analysis_files/figure-latex/bias/ error chart-1.pdf>
+Package pdftex.def Info: analysis_files/figure-latex/bias/ error chart-1.pdf  used on input line 82.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+<analysis_files/figure-latex/bias over trials-1.pdf, id=9, 469.755pt x 325.215pt>
+File: analysis_files/figure-latex/bias over trials-1.pdf Graphic file (type pdf)
+<use analysis_files/figure-latex/bias over trials-1.pdf>
+Package pdftex.def Info: analysis_files/figure-latex/bias over trials-1.pdf  used on input line 84.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+
+Overfull \hbox (14.99884pt too wide) in paragraph at lines 84--85
+[][] 
+ []
+
 [1
 
-{/Users/kalebducharme/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./analysis_files/figure-latex/biasChart-1.pdf>] (./analysis.aux)
+{/Users/kalebducharme/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./analysis_files/figure-latex/bias/ error chart-1.pdf>]
+<analysis_files/figure-latex/average sphere size vs probe response-1.pdf, id=30, 469.755pt x 325.215pt>
+File: analysis_files/figure-latex/average sphere size vs probe response-1.pdf Graphic file (type pdf)
+<use analysis_files/figure-latex/average sphere size vs probe response-1.pdf>
+Package pdftex.def Info: analysis_files/figure-latex/average sphere size vs probe response-1.pdf  used on input line 86.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+
+Overfull \hbox (14.99884pt too wide) in paragraph at lines 86--87
+[][] 
+ []
+
+[2 <./analysis_files/figure-latex/bias over trials-1.pdf>] [3 <./analysis_files/figure-latex/average sphere size vs probe response-1.pdf>] (./analysis.aux)
 Package rerunfilecheck Info: File `analysis.out' has not changed.
-(rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
+(rerunfilecheck)             Checksum: 62EBA70BC187546C3CD1CB0370EB0514;97.
  ) 
 Here is how much of TeX's memory you used:
- 12331 strings out of 477989
- 197384 string characters out of 5838053
- 1851346 words of memory out of 5000000
- 32293 multiletter control sequences out of 15000+600000
- 533657 words of font info for 52 fonts, out of 8000000 for 9000
+ 12356 strings out of 477989
+ 198473 string characters out of 5838053
+ 1852346 words of memory out of 5000000
+ 32310 multiletter control sequences out of 15000+600000
+ 539654 words of font info for 54 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,7n,76p,313b,434s stack positions out of 10000i,1000n,20000p,200000b,200000s
-{/Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}</Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb>
-Output written on analysis.pdf (1 page, 69379 bytes).
+ 75i,7n,76p,313b,435s stack positions out of 10000i,1000n,20000p,200000b,200000s
+{/Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}</Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb>
+Output written on analysis.pdf (3 pages, 189982 bytes).
 PDF statistics:
- 35 PDF objects out of 1000 (max. 8388607)
- 23 compressed objects within 1 object stream
- 2 named destinations out of 1000 (max. 500000)
- 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 77 PDF objects out of 1000 (max. 8388607)
+ 57 compressed objects within 1 object stream
+ 6 named destinations out of 1000 (max. 500000)
+ 24 words of extra memory for PDF output out of 10000 (max. 10000000)
 
