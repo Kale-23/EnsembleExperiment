@@ -19,14 +19,16 @@ import os
 ###################
 
 testing = True #if true, outfile name is 'testing' rather than 'partipant'
+trialsBetweenBreaks = 5
+thumbstick = False # oculus uses getTrackpad() instead
 
 participantHeight = 0 #recorded during learning phase
 
 # Number of trials for each distance in each category (Total = # * 3)
-depthLearningCount = 4 # depth learning phase #4 norm
-depthCount = 5 # depth phase #5 norm
-learningCount = 10 # learning phase #10 norm
-count = 100 # experimental phase #100 norm
+depthLearningCount = 1 # depth learning phase #4 norm
+depthCount = 1 # depth phase #5 norm
+learningCount = 1 # learning phase #10 norm
+count = 5 # experimental phase #100 norm
 
 # trial's distance from participant
 distance1 = 3 # foreground
@@ -66,9 +68,10 @@ valueToScaleBy = 1.005 # scale factor multiplied/ divided by this value when par
 
 # response parameters
 depthPassPercentage = 0.8 #percentage participant has to get to pass the depth test
+depthPass = True
 endResponseInput = steamvr.BUTTON_TRIGGER # participant input that confirms their probe size and ends response portion of trial.
 timeToScale = 60 # max time participant has to scale probe sphere and submit answer.
-thumbstick = True # oculus uses getTrackpad() instead
+
 
 # global lists
 sphereList = [] # All spheres and trials are pregenerated before running the experiment, each trial is stored in this list. The trials stored will be lists of 8 sphere parameters per trial.
@@ -487,13 +490,15 @@ Press the trigger button when you are ready to start""",
 			print(str(dis) + " response: " + response)	
 			if (dis == distance1 and response == 'infront') or (dis == distance2 and response == 'same') or (dis == distance3 and response == 'behind'):
 				correct += 1
-			
+		
+		global depthPass
 		if correct >= (depthPassPercentage * len(depthList)):
 			texts = addPanel("""Depth testing is now over, we will
 now begin with the second part of the experiment.
 
 Press the trigger button when you are ready to continue""",
 			'participant passes depth test')
+			depthPass = True
 			floorGrid1.remove()
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 			texts[0].remove()
@@ -501,10 +506,11 @@ Press the trigger button when you are ready to continue""",
 			
 			yield viztask.waitTime(0.5)
 		else:
-			texts = addPanel("""You did not pass the depth test
-please remove the headset and listen to the instructor
-for your next steps.""",
-			'participant passes depth test')
+			texts = addPanel("""Depth Test is over
+			
+Press the trigger button when you are in position and ready to continue.""",
+			'participant failed depth test')
+			depthPass = False
 			floorGrid1.remove()
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 			texts[0].remove()
@@ -513,15 +519,16 @@ for your next steps.""",
 	
 	
 	texts = addPanel("""Please line yourself with your head directly over 
-the blue line below, and make yourself comfortable
-in your chair. The position you are in now will have
-to be held throughout the experiment, so that your
-height and orientation remains constant. Please stay in 
-this position until the experiment is over.
+the blue box below and directly facing the blue line.
+Make yourself comfortable in your chair. The position you 
+are in now will have to be held throughout the experiment, 
+so that your height and orientation remains constant.
+Please stay in this position until the experiment is over.
 
 Press the trigger button when you are in position and ready to continue""",
 	"Participant is about to take height.")
 	spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
+	spheresOut.append(vizshape.addPlane(size=[0.3,0.3,0.3], axis=vizshape.AXIS_Y, pos=[0,0.01,0], color=viz.BLUE))
 	yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 	texts[0].remove()
 	texts[1].remove()
@@ -712,8 +719,6 @@ def vrSetup():
 	viewLink.preMultLinkable(hmd.getSensor())
 	
 	print(str(hmd.getIPD()))
-	hmd.setIPD(70)
-	print(str(hmd.getIPD()))
 	#controller
 	global controller
 	for controller in steamvr.getControllerList():
@@ -742,6 +747,9 @@ def experiment():
 	
 	global data
 	data = yield participantInfo()
+	
+	print("Waiting spacebar down to connect headset, use this time to allow participant to get headset on")
+	yield viztask.waitKeyDown(' ')
 	
 	vrSetup()
 	#learning phase/ records participant height
@@ -773,7 +781,7 @@ Press the trigger button when you are ready to resume""",
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 			texts[0].remove()
 			texts[1].remove()
-		if i % 50 == 0 and i != 0:
+		if i % trialsBetweenBreaks == 0 and i != 0:
 			texts = addPanel("""You may now take a short break.
 Please stay seated with your headset on.
 When you are ready to continue, line yourself
@@ -782,6 +790,7 @@ back up with the blue line.
 Press the trigger button when you are ready to resume""",
 			'participant is taking break')
 			spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
+			spheresOut.append(vizshape.addPlane(size=[0.3,0.3,0.3], axis=vizshape.AXIS_Y, pos=[0,0.01,0], color=viz.BLUE))
 			yield viztask.waitTime(5)
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
 			texts[0].remove()
@@ -794,7 +803,7 @@ Press the trigger button when you are ready to resume""",
 		yield removeSpheres() #removes cross and spheres
 		
 		probe = yield response(sphereList[i][0][2]) #response portion of trial is performed
-		print("trial: " + str(i + 1) + "distance: " + str(sphereList[i][0][2]) + " response: " + str(probe[2]))
+		print("trial: " + str(i + 1) + ", distance: " + str(sphereList[i][0][2]) + ", response: " + str(probe[2]))
 		#checks to see if participant changed the probe sphere or is just rushing through
 		if probe[1] == 1:
 			sameResponse += 1
@@ -879,11 +888,11 @@ def writeOut():
 		filename = "Participant" + str(participantNumber) + ".csv"
 	with open(os.path.join(path, filename), 'w') as outfile:
 		try:
-			outfile.write("ID,age,gender,hand,ipd,vision,height,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
+			outfile.write("ID,age,gender,hand,ipd,vision,height,depthPass,trial,sphereOne,sphereTwo,sphereThree,sphereFour,sphereFive,sphereSix,sphereSeven,sphereEight,sphereDistance, sphereAverageRadius,probeStartingRadius,probeAnswerRadius,probeScaleFactor,probeResponseTime,probeResponseOverTimeLimit\n")
 			
 			for i in range(len(sphereList)):
 				print(trialProbeResponse[i])
-				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0], trialProbeResponse[i][2], trialProbeResponse[i][1], trialProbeResponse[i][4], trialProbeResponse[i][3]))
+				outfile.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(participantNumber, data[1], data[2], data[0], data[4], data[3], participantHeight, i + 1, depthPass, sphereToString(sphereList[i]), sphereList[i][0][2], sphereTrialAverageRadius(sphereList[i]), trialProbeResponse[i][0], trialProbeResponse[i][2], trialProbeResponse[i][1], trialProbeResponse[i][4], trialProbeResponse[i][3]))
 		
 		except IOError:
 			viz.logWarn("Dont have the file permissions to log data")
