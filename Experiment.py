@@ -19,16 +19,16 @@ import os
 ###################
 
 testing = True #if true, outfile name is 'testing' rather than 'partipant'
-trialsBetweenBreaks = 5
-thumbstick = False # oculus uses getTrackpad() instead
+trialsBetweenBreaks = 50 # 50 norm
+thumbstick = True # oculus uses getTrackpad() instead
 
 participantHeight = 0 #recorded during learning phase
 
 # Number of trials for each distance in each category (Total = # * 3)
-depthLearningCount = 1 # depth learning phase #4 norm
-depthCount = 1 # depth phase #5 norm
-learningCount = 1 # learning phase #10 norm
-count = 5 # experimental phase #100 norm
+depthLearningCount = 4 # depth learning phase #4 norm
+depthCount = 5 # depth phase #5 norm
+learningCount = 10 # learning phase #10 norm
+count = 100 # experimental phase #100 norm
 
 # trial's distance from participant
 distance1 = 3 # foreground
@@ -49,7 +49,7 @@ betweenTrialPause = 0 #time between submission of probe sphere and next trial st
 # Radius values for spheres
 distanceScaling = True #have scaling radii based on distance from distance2
 #rLow = 0.1528 # Lowest radius a sphere can randomly be given
-rLow = 0.076
+rLow = 0.075
 #rHigh = 0.42730 # Highest radius a sphere can randomly be given
 rHigh = 0.175
 #rAvgLow = 0.2304 # minimum average radius for spheres in each trial, if below this value sphere values for trial will be deleted and new values will be generated
@@ -59,9 +59,9 @@ rAvgHigh = 0.14
 
 # probe parameters
 #probeRadLow = 0.10470 # Lowest radius the probe can randomly be given
-probeRadLow = 0.0502
+probeRadLow = 0.0500
 #probeRadHigh = 0.52370 # Highest radius the probe can randomly be given
-probeRadHigh = 0.251
+probeRadHigh = 0.250
 scale_factor = 1 # factor by which the radius of the probe will be scaled by when shown.(starts at 1)
 #valueToScaleByAddSubtract = 0.0524 # value by which the scale factor of the probe is increased/decreased during response
 valueToScaleBy = 1.005 # scale factor multiplied/ divided by this value when participant provides imput during response
@@ -82,7 +82,7 @@ data = [] # holds participant data collected at end in info panel
 #texture mapping for spheres and probe
 texture = False #apply texture to spheres and probe
 if texture == True:
-	grid = viz.addTexture('VRStuff\textures\grid.jpg') #importing the texture file
+	grid = viz.addTexture('VRStuff\\textures\\grid.jpg') #importing the texture file
 	grid.wrap(viz.WRAP_T, viz.REPEAT) #next two make it so texture repeats, size of texture stays the same while size of object changes
 	grid.wrap(viz.WRAP_S, viz.REPEAT)
 	matrix = vizmat.Transform() #adjusted when spheres are made, makes it so texture maps correctly onto objects
@@ -203,6 +203,7 @@ def removeSpheres():
 	
 	for s in spheresOut:
 		s.remove()
+		print("removed")
 	spheresOut = []
 	
 
@@ -783,13 +784,15 @@ Press the trigger button when you are ready to resume""",
 			texts[1].remove()
 		if i % trialsBetweenBreaks == 0 and i != 0:
 			texts = addPanel("""You may now take a short break.
-Please stay seated with your headset on.
+
 When you are ready to continue, line yourself
-back up with the blue line.
+back up with the blue line,
+and have your eye height match the red line.
 
 Press the trigger button when you are ready to resume""",
 			'participant is taking break')
-			spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0.001,1], color=viz.BLUE)) #for alignment of participant
+			spheresOut.append(addRayPrimitive(origin=[0,0.001,0], direction=[0,0,1], color=viz.BLUE)) #for alignment of participant
+			spheresOut.append(addRayPrimitive(origin=[-10,participantHeight,0], direction=[10,0,0], color=viz.RED)) #for alignment of participant height
 			spheresOut.append(vizshape.addPlane(size=[0.3,0.3,0.3], axis=vizshape.AXIS_Y, pos=[0,0.01,0], color=viz.BLUE))
 			yield viztask.waitTime(5)
 			yield viztask.waitSensorDown(controller, [steamvr.BUTTON_TRIGGER])
