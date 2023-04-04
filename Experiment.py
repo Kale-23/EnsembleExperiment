@@ -203,7 +203,7 @@ def removeSpheres():
 	
 	for s in spheresOut:
 		s.remove()
-		print("removed")
+		#print("removed")
 	spheresOut = []
 	
 
