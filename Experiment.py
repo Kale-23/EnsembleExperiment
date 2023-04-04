@@ -18,7 +18,7 @@ import os
 ##### GLOBALS #####
 ###################
 
-testing = True #if true, outfile name is 'testing' rather than 'partipant'
+testing = False #if true, outfile name is 'testing' rather than 'partipant'
 trialsBetweenBreaks = 50 # 50 norm
 thumbstick = True # oculus uses getTrackpad() instead
 
