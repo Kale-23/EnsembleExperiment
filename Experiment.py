@@ -385,7 +385,7 @@ def learningPhase():
 					else:
 						pass
 			
-			text = viz.addText('chose answer', pos=[0, participantHeight, distance2])
+			text = viz.addText('chose answer', pos=[-.5, participantHeight, distance2])
 			text.setScale([0.4,0.4,0.4])
 					
 			# Allows participant input during this time until 'endResponseInput' is input.
@@ -464,6 +464,22 @@ Press the trigger button when you are ready to start""",
 			yield viztask.waitTime(trialShowPause) #pause
 			yield removeSpheres() #removes cross and spheres
 			res = yield depthResponse() #response portion of trial is performed, returned values not recorded
+			yield viztask.waitTime(0.5)
+			
+			ans = "none"
+			#showing participant output during learning
+			if dis == distance1:
+				ans = "infront"
+			elif dis == distance2:
+				ans = "same"
+			elif dis == distance3:
+				ans = "behind"
+			
+			correct = viz.addText("Correct Response: {}".format(str(ans)), pos=[-2.25, participantHeight, distance2])
+			correct.setScale([0.4,0.4,0.4])
+			yield viztask.waitTime(1)
+			correct.remove()
+			
 			print(str(dis) + " response: " + res)
 			
 		texts = addPanel("""The learning phase is
