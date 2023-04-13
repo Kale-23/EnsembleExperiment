@@ -25,7 +25,7 @@ thumbstick = True # oculus uses getTrackpad() instead
 participantHeight = 0 #recorded during learning phase
 
 # Number of trials for each distance in each category (Total = # * 3)
-depthLearningCount = 15 # depth learning phase #10 norm
+depthLearningCount = 15 # depth learning phase #15 norm
 depthCount = 10 # depth phase #10 norm
 learningCount = 4 # learning phase #4 norm
 count = 100 # experimental phase #100 norm
