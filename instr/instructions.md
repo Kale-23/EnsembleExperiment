@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Instructions for VR Experiment
 - if you have any questions, don't be afraid to text Kaleb for help @ (603) 948 5346
 
@@ -6,6 +11,8 @@
     - It should already be plugged in correctly, but if it is unplugged for any reason, text me and I can tell you how to plug it back in if you don't know how
 - Plug in the VR headset power cable
 - Press the power button on the top of the computer and wait for the screen to startup
+- While starting up, run the headset through the CleanBox by pressing the green button in the top left
+    - The button will turn red, and will turn back green when finished
 - Once screen is on, select the lab profile and log in
     - user ID: svc_UNH_Psy_Ksk01
     - password: interdisciplinary perception lab 

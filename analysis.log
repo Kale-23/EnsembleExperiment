@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  22 MAR 2023 13:47
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  12 APR 2023 11:44
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -576,23 +576,45 @@ Overfull \hbox (14.99884pt too wide) in paragraph at lines 86--87
 [][] 
  []
 
-[2 <./analysis_files/figure-latex/bias over trials-1.pdf>] [3 <./analysis_files/figure-latex/average sphere size vs probe response-1.pdf>] (./analysis.aux)
+[2 <./analysis_files/figure-latex/bias over trials-1.pdf>]
+<analysis_files/figure-latex/speed over trials-1.pdf, id=46, 469.755pt x 325.215pt>
+File: analysis_files/figure-latex/speed over trials-1.pdf Graphic file (type pdf)
+<use analysis_files/figure-latex/speed over trials-1.pdf>
+Package pdftex.def Info: analysis_files/figure-latex/speed over trials-1.pdf  used on input line 88.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+
+Overfull \hbox (14.99884pt too wide) in paragraph at lines 88--89
+[][] 
+ []
+
+[3 <./analysis_files/figure-latex/average sphere size vs probe response-1.pdf>]
+<analysis_files/figure-latex/response time vs bias-1.pdf, id=56, 469.755pt x 325.215pt>
+File: analysis_files/figure-latex/response time vs bias-1.pdf Graphic file (type pdf)
+<use analysis_files/figure-latex/response time vs bias-1.pdf>
+Package pdftex.def Info: analysis_files/figure-latex/response time vs bias-1.pdf  used on input line 90.
+(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
+
+Overfull \hbox (14.99884pt too wide) in paragraph at lines 90--91
+[][] 
+ []
+
+[4 <./analysis_files/figure-latex/speed over trials-1.pdf>] [5 <./analysis_files/figure-latex/response time vs bias-1.pdf>] (./analysis.aux)
 Package rerunfilecheck Info: File `analysis.out' has not changed.
-(rerunfilecheck)             Checksum: 62EBA70BC187546C3CD1CB0370EB0514;97.
+(rerunfilecheck)             Checksum: F1C0FDA6BEC2197D9F0649DC5D2E4752;127.
  ) 
 Here is how much of TeX's memory you used:
- 12356 strings out of 477989
- 198473 string characters out of 5838053
+ 12372 strings out of 477989
+ 199297 string characters out of 5838053
  1852346 words of memory out of 5000000
- 32310 multiletter control sequences out of 15000+600000
+ 32322 multiletter control sequences out of 15000+600000
  539654 words of font info for 54 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  75i,7n,76p,313b,435s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {/Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}</Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/kalebducharme/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb>
-Output written on analysis.pdf (3 pages, 189982 bytes).
+Output written on analysis.pdf (5 pages, 341237 bytes).
 PDF statistics:
- 77 PDF objects out of 1000 (max. 8388607)
- 57 compressed objects within 1 object stream
- 6 named destinations out of 1000 (max. 500000)
- 24 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 105 PDF objects out of 1000 (max. 8388607)
+ 79 compressed objects within 1 object stream
+ 8 named destinations out of 1000 (max. 500000)
+ 34 words of extra memory for PDF output out of 10000 (max. 10000000)
 
